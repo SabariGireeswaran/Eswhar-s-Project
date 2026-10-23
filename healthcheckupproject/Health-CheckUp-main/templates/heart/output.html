@@ -1,0 +1,88 @@
+{% extends "header.html" %}
+{% load static %}
+
+{% block title %}Cardiology Assessment Report | AI Diagnostics{% endblock %}
+
+{% block page_badge %}
+  <span class="nav-badge"><i class="fa-solid fa-heart-pulse"></i> Cardiology Report</span>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+      
+      <div class="glass-card">
+        {% if pred == 1 %}
+          <!-- Low Risk / Healthy Heart -->
+          <div class="result-hero success">
+            <div class="result-icon-ring success">
+              <i class="fa-solid fa-heart-circle-check"></i>
+            </div>
+            <span class="badge px-3 py-2 rounded-pill mb-3" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">
+              Normal Cardiovascular Health
+            </span>
+            <h2 style="font-weight: 800; font-size: 2rem; letter-spacing: -0.02em;">Low Risk of Heart Disease</h2>
+            <p class="text-secondary mx-auto mt-2" style="max-width: 520px; font-size: 0.95rem;">
+              Your hemodynamic and electrocardiographic metrics fall within the healthy baseline profile. The machine learning model identified no immediate patterns correlated with coronary artery disease.
+            </p>
+          </div>
+
+          <!-- Cardiology Wellness Tips -->
+          <div class="p-4 rounded-3 mb-4" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2);">
+            <h5 class="d-flex align-items-center gap-2 mb-3" style="color: #6ee7b7; font-size: 1.05rem; font-weight: 700;">
+              <i class="fa-solid fa-shield-heart"></i> Maintain Your Heart Health:
+            </h5>
+            <ul class="mb-0 ps-3 text-secondary" style="font-size: 0.9rem; line-height: 1.8;">
+              <li>Keep blood pressure within normal limits (&lt; 120/80 mm Hg) with reduced sodium intake.</li>
+              <li>Sustain cardio fitness through aerobic workouts like brisk walking, cycling, or swimming.</li>
+              <li>Include heart-protective omega-3 fatty acids, nuts, and leafy vegetables in your diet.</li>
+              <li>Avoid smoking, excessive alcohol, and prolonged unmanaged emotional stress.</li>
+            </ul>
+          </div>
+
+        {% elif pred == 0 %}
+          <!-- Elevated Heart Disease Risk -->
+          <div class="result-hero danger">
+            <div class="result-icon-ring danger">
+              <i class="fa-solid fa-heart-circle-exclamation"></i>
+            </div>
+            <span class="badge px-3 py-2 rounded-pill mb-3" style="background: rgba(244, 63, 94, 0.2); border: 1px solid rgba(244, 63, 94, 0.4); color: #fb7185; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">
+              Elevated Cardiac Risk Detected
+            </span>
+            <h2 style="font-weight: 800; font-size: 2rem; letter-spacing: -0.02em;">Cardiovascular Risk Indicators Present</h2>
+            <p class="text-secondary mx-auto mt-2" style="max-width: 520px; font-size: 0.95rem;">
+              Based on the evaluated biomarkers (such as exercise response, ST slope, resting ECG, and blood pressure), the model detected potential signs associated with cardiovascular disease or ischemia.
+            </p>
+          </div>
+
+          <!-- Urgent Medical Advice -->
+          <div class="p-4 rounded-3 mb-4" style="background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.2);">
+            <h5 class="d-flex align-items-center gap-2 mb-3" style="color: #fda4af; font-size: 1.05rem; font-weight: 700;">
+              <i class="fa-solid fa-user-doctor"></i> Recommended Next Steps:
+            </h5>
+            <ul class="mb-0 ps-3 text-secondary" style="font-size: 0.9rem; line-height: 1.8;">
+              <li>Schedule an evaluation with a <strong>Cardiologist</strong> for clinical ECG / Echocardiogram testing.</li>
+              <li>If experiencing shortness of breath, acute chest tightness, or radiating arm pain, seek emergency medical care.</li>
+              <li>Review your lipid panel (LDL, HDL, triglycerides) and discuss proactive lipid management.</li>
+              <li>Avoid heavy sudden exertion until cleared by your physician.</li>
+            </ul>
+          </div>
+        {% endif %}
+
+        <!-- Actions -->
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 pt-2">
+          <a href="{% url 'heart-disease-view' %}" class="btn btn-primary px-4">
+            <i class="fa-solid fa-arrow-rotate-left"></i> Retake Cardiovascular Test
+          </a>
+          <a href="{% url 'index' %}" class="btn btn-secondary px-4">
+            <i class="fa-solid fa-house"></i> Dashboard
+          </a>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

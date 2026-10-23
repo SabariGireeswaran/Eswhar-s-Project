@@ -1,0 +1,299 @@
+{% extends "header.html" %}
+{% load static %}
+
+{% block title %}Interactive BMI & Biometric Studio | AI Diagnostics{% endblock %}
+
+{% block page_badge %}
+  <span class="nav-badge"><i class="fa-solid fa-weight-scale"></i> Biometrics Studio</span>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Custom Range Slider Styling */
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    outline: none;
+    transition: var(--transition);
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0284c7, #38bdf8);
+    cursor: pointer;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+    border: 2px solid #ffffff;
+    transition: transform 0.15s ease;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0284c7, #38bdf8);
+    cursor: pointer;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+    border: 2px solid #ffffff;
+    transition: transform 0.15s ease;
+  }
+
+  /* BMI Spectrum Bar */
+  .bmi-spectrum-bar {
+    height: 12px;
+    border-radius: 9999px;
+    background: linear-gradient(to right, #38bdf8 0%, #10b981 35%, #f59e0b 65%, #f43f5e 100%);
+    position: relative;
+    margin: 20px 0 10px;
+  }
+  .bmi-indicator-needle {
+    position: absolute;
+    top: -6px;
+    width: 24px;
+    height: 24px;
+    background: #ffffff;
+    border: 3px solid #090e17;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+    transform: translateX(-50%);
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Metric Readout Card */
+  .bmi-score-display {
+    text-align: center;
+    padding: 30px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    position: relative;
+    overflow: hidden;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-9">
+      
+      <div class="glass-card">
+        <!-- Header -->
+        <div class="glass-card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <div style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, #0284c7, #10b981); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);">
+              <i class="fa-solid fa-weight-scale"></i>
+            </div>
+            <div>
+              <h2 class="mb-1" style="font-weight: 700; font-size: 1.6rem; letter-spacing: -0.02em;">Biometric BMI Calculator</h2>
+              <p class="mb-0 text-muted" style="font-size: 0.9rem;">Real-time Body Mass Index analysis & healthy weight range estimation</p>
+            </div>
+          </div>
+          
+          <!-- Presets -->
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setPreset(68, 175)">
+              <i class="fa-solid fa-male text-info"></i> Avg Male
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setPreset(58, 162)">
+              <i class="fa-solid fa-female text-warning"></i> Avg Female
+            </button>
+          </div>
+        </div>
+
+        <div class="row g-4 align-items-center">
+          <!-- Left Column: Interactive Controls -->
+          <div class="col-lg-7">
+            
+            <!-- Weight Slider -->
+            <div class="p-3 mb-4 rounded-3" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle);">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label for="weight" class="form-label mb-0 fw-bold">
+                  <i class="fa-solid fa-weight-hanging text-info me-2"></i> Body Weight
+                </label>
+                <div class="d-flex align-items-center gap-2">
+                  <span id="weight-val" class="fs-5 fw-bold text-info">70 kg</span>
+                </div>
+              </div>
+              <input type="range" min="20" max="220" value="70" id="weight" oninput="calculate()" class="my-2" />
+              <div class="d-flex justify-content-between text-muted" style="font-size: 0.75rem;">
+                <span>20 kg</span>
+                <span>Ideal: 55 - 75 kg</span>
+                <span>220 kg</span>
+              </div>
+            </div>
+
+            <!-- Height Slider -->
+            <div class="p-3 mb-4 rounded-3" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle);">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label for="height" class="form-label mb-0 fw-bold">
+                  <i class="fa-solid fa-ruler-vertical text-warning me-2"></i> Height
+                </label>
+                <div class="d-flex align-items-center gap-2">
+                  <span id="height-val" class="fs-5 fw-bold text-warning">170 cm</span>
+                </div>
+              </div>
+              <input type="range" min="90" max="240" value="170" id="height" oninput="calculate()" class="my-2" />
+              <div class="d-flex justify-content-between text-muted" style="font-size: 0.75rem;">
+                <span>90 cm</span>
+                <span>Avg: 165 - 180 cm</span>
+                <span>240 cm</span>
+              </div>
+            </div>
+
+            <!-- Target Health Weight Insight -->
+            <div class="p-3 rounded-3" style="background: rgba(56, 189, 248, 0.05); border: 1px solid rgba(56, 189, 248, 0.2);">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <i class="fa-solid fa-bullseye text-info"></i>
+                <span style="font-size: 0.85rem; font-weight: 700; color: #7dd3fc;">Normal Weight Target for Your Height:</span>
+              </div>
+              <p id="healthy-range-text" class="mb-0 text-secondary" style="font-size: 0.85rem;">
+                For 170 cm, a healthy weight is between <strong>53.5 kg</strong> and <strong>72.0 kg</strong>.
+              </p>
+            </div>
+
+          </div>
+
+          <!-- Right Column: Live BMI Gauge & Category Card -->
+          <div class="col-lg-5">
+            <div class="bmi-score-display">
+              <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.8rem; letter-spacing: 0.05em;">Your Calculated BMI</span>
+              
+              <!-- Result Number -->
+              <div class="my-2">
+                <span id="result" style="font-size: 3.5rem; font-weight: 800; letter-spacing: -0.03em; color: #10b981; line-height: 1;">
+                  24.2
+                </span>
+                <span class="text-muted" style="font-size: 1rem; font-weight: 600;">kg/m&sup2;</span>
+              </div>
+
+              <!-- Category Badge -->
+              <div class="mb-3">
+                <span id="category" class="badge px-3 py-2 rounded-pill" style="font-size: 0.95rem; font-weight: 700; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);">
+                  Normal weight
+                </span>
+              </div>
+
+              <!-- Spectrum Visualizer Bar -->
+              <div class="bmi-spectrum-bar">
+                <div id="bmiNeedle" class="bmi-indicator-needle" style="left: 45%;"></div>
+              </div>
+              <div class="d-flex justify-content-between text-muted" style="font-size: 0.7rem; font-weight: 600;">
+                <span style="color: #38bdf8;">&lt; 18.5</span>
+                <span style="color: #10b981;">18.5 - 24.9</span>
+                <span style="color: #f59e0b;">25 - 29.9</span>
+                <span style="color: #f43f5e;">30+</span>
+              </div>
+
+              <!-- Mini explanation -->
+              <p id="bmiAdvice" class="mt-3 mb-0 text-secondary" style="font-size: 0.82rem; line-height: 1.5;">
+                You are in the optimal healthy weight category.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Links -->
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 mt-4 pt-3 border-top" style="border-color: var(--border-subtle) !important;">
+          <a href="{% url 'diabetes-view' %}" class="btn btn-primary px-4">
+            <i class="fa-solid fa-droplet"></i> Check Diabetes Risk
+          </a>
+          <a href="{% url 'index' %}" class="btn btn-secondary px-4">
+            <i class="fa-solid fa-house"></i> Dashboard
+          </a>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script type="text/javascript">
+  function calculate() {
+    var weight = parseFloat(document.getElementById("weight").value);
+    var height = parseFloat(document.getElementById("height").value);
+
+    document.getElementById("weight-val").textContent = weight + " kg";
+    document.getElementById("height-val").textContent = height + " cm";
+
+    var bmi = (weight / Math.pow((height / 100), 2)).toFixed(1);
+    var result = document.getElementById("result");
+    var categoryEl = document.getElementById("category");
+    var needle = document.getElementById("bmiNeedle");
+    var adviceEl = document.getElementById("bmiAdvice");
+
+    result.textContent = bmi;
+
+    // Normal Range Calculator
+    var minHealthy = (18.5 * Math.pow((height / 100), 2)).toFixed(1);
+    var maxHealthy = (24.9 * Math.pow((height / 100), 2)).toFixed(1);
+    document.getElementById("healthy-range-text").innerHTML = 
+      `For ${height} cm, a healthy weight is between <strong>${minHealthy} kg</strong> and <strong>${maxHealthy} kg</strong>.`;
+
+    var category = "";
+    var color = "";
+    var badgeBg = "";
+    var badgeBorder = "";
+    var needlePercent = 50;
+
+    if (bmi < 18.5) {
+      category = "Underweight";
+      color = "#38bdf8";
+      badgeBg = "rgba(56, 189, 248, 0.2)";
+      badgeBorder = "rgba(56, 189, 248, 0.4)";
+      needlePercent = Math.max(5, (bmi / 18.5) * 25);
+      adviceEl.textContent = "Your BMI is below normal. Focus on nutrient-dense meals and strength training.";
+    } else if (bmi >= 18.5 && bmi <= 24.9) {
+      category = "Normal Weight";
+      color = "#10b981";
+      badgeBg = "rgba(16, 185, 129, 0.2)";
+      badgeBorder = "rgba(16, 185, 129, 0.4)";
+      needlePercent = 25 + ((bmi - 18.5) / (24.9 - 18.5)) * 25;
+      adviceEl.textContent = "Great job! You have an optimal weight ratio for your height.";
+    } else if (bmi >= 25 && bmi <= 29.9) {
+      category = "Overweight";
+      color = "#f59e0b";
+      badgeBg = "rgba(245, 158, 11, 0.2)";
+      badgeBorder = "rgba(245, 158, 11, 0.4)";
+      needlePercent = 50 + ((bmi - 25) / (29.9 - 25)) * 25;
+      adviceEl.textContent = "Slightly elevated BMI. Consider increasing weekly cardio and portion monitoring.";
+    } else {
+      category = "Obesity Range";
+      color = "#f43f5e";
+      badgeBg = "rgba(244, 63, 94, 0.2)";
+      badgeBorder = "rgba(244, 63, 94, 0.4)";
+      needlePercent = Math.min(95, 75 + ((bmi - 30) / 15) * 20);
+      adviceEl.textContent = "Elevated metabolic risk. We recommend consulting a nutritionist or physician.";
+    }
+
+    result.style.color = color;
+    categoryEl.textContent = category;
+    categoryEl.style.color = color;
+    categoryEl.style.background = badgeBg;
+    categoryEl.style.borderColor = badgeBorder;
+    needle.style.left = needlePercent + "%";
+  }
+
+  function setPreset(w, h) {
+    document.getElementById("weight").value = w;
+    document.getElementById("height").value = h;
+    calculate();
+  }
+
+  // Initialize on load
+  document.addEventListener("DOMContentLoaded", function() {
+    calculate();
+  });
+</script>
+{% endblock %}

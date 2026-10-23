@@ -1,0 +1,87 @@
+{% extends "header.html" %}
+{% load static %}
+
+{% block title %}Diabetes Assessment Result | AI Diagnostics{% endblock %}
+
+{% block page_badge %}
+  <span class="nav-badge"><i class="fa-solid fa-droplet"></i> Diagnostic Report</span>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+      
+      <div class="glass-card">
+        {% if pred == 1 %}
+          <!-- High Risk Result -->
+          <div class="result-hero danger">
+            <div class="result-icon-ring danger">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <span class="badge px-3 py-2 rounded-pill mb-3" style="background: rgba(244, 63, 94, 0.2); border: 1px solid rgba(244, 63, 94, 0.4); color: #fb7185; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">
+              Elevated Risk Detected
+            </span>
+            <h2 style="font-weight: 800; font-size: 2rem; letter-spacing: -0.02em;">Positive for Diabetic Indicators</h2>
+            <p class="text-secondary mx-auto mt-2" style="max-width: 520px; font-size: 0.95rem;">
+              Based on your clinical parameters (including glycemic markers, BMI, and metabolic indicators), the machine learning model indicates a higher likelihood of diabetes or pre-diabetic state.
+            </p>
+          </div>
+
+          <!-- Clinical Guidance Box -->
+          <div class="p-4 rounded-3 mb-4" style="background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.2);">
+            <h5 class="d-flex align-items-center gap-2 mb-3" style="color: #fda4af; font-size: 1.05rem; font-weight: 700;">
+              <i class="fa-solid fa-stethoscope"></i> Recommended Medical Actions:
+            </h5>
+            <ul class="mb-0 ps-3 text-secondary" style="font-size: 0.9rem; line-height: 1.8;">
+              <li>Schedule an <strong>HbA1c test</strong> with your healthcare provider for clinical confirmation.</li>
+              <li>Monitor daily fasting blood sugar and post-prandial glucose levels.</li>
+              <li>Adopt a low-glycemic, high-fiber dietary plan with controlled carbohydrate intake.</li>
+              <li>Book an immediate consultation with an endocrinologist or physician.</li>
+            </ul>
+          </div>
+
+        {% elif pred == 0 %}
+          <!-- Low Risk / Healthy Result -->
+          <div class="result-hero success">
+            <div class="result-icon-ring success">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <span class="badge px-3 py-2 rounded-pill mb-3" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">
+              Low Risk / Normal Status
+            </span>
+            <h2 style="font-weight: 800; font-size: 2rem; letter-spacing: -0.02em;">No Diabetes Detected</h2>
+            <p class="text-secondary mx-auto mt-2" style="max-width: 520px; font-size: 0.95rem;">
+              Your physiological metrics align with normal metabolic profiles. Keep up your healthy lifestyle routines, balanced nutrition, and active habits.
+            </p>
+          </div>
+
+          <!-- Wellness Guidance Box -->
+          <div class="p-4 rounded-3 mb-4" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2);">
+            <h5 class="d-flex align-items-center gap-2 mb-3" style="color: #6ee7b7; font-size: 1.05rem; font-weight: 700;">
+              <i class="fa-solid fa-heart-pulse"></i> Preventive Health Recommendations:
+            </h5>
+            <ul class="mb-0 ps-3 text-secondary" style="font-size: 0.9rem; line-height: 1.8;">
+              <li>Maintain regular physical activity (minimum 150 minutes of moderate exercise per week).</li>
+              <li>Undergo routine annual wellness checkups to stay ahead of metabolic changes.</li>
+              <li>Stay well-hydrated and prioritize whole foods, healthy fats, and lean proteins.</li>
+            </ul>
+          </div>
+        {% endif %}
+
+        <!-- Actions -->
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 pt-2">
+          <a href="{% url 'diabetes-view' %}" class="btn btn-primary px-4">
+            <i class="fa-solid fa-arrow-rotate-left"></i> Retake Assessment
+          </a>
+          <a href="{% url 'index' %}" class="btn btn-secondary px-4">
+            <i class="fa-solid fa-house"></i> Dashboard
+          </a>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

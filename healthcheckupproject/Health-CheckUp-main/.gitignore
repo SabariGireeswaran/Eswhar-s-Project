@@ -1,0 +1,8 @@
+env/
+.env
+.vscode/
+__pycache__/
+db.sqlite3
+media/
+models/alzheimer-model.h5
+models/DrugRecommendationDataUCL.csv

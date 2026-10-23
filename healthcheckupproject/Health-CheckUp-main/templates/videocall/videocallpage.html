@@ -1,0 +1,430 @@
+{% extends "header.html" %}
+{% load static %}
+
+{% block title %}Doctor Consultations & Appointments | Health Checkup{% endblock %}
+
+{% block page_badge %}
+  <span class="nav-badge"><i class="fa-solid fa-user-doctor"></i> Telehealth Portal</span>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="shortcut icon" href="{% static 'videocall/checkup.png' %}" type="image/png" />
+<script crossorigin src="https://unpkg.com/@daily-co/daily-js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.25.0/axios.min.js"></script>
+
+<style>
+  .loader {
+    font-size: 10px;
+    margin: 30px auto;
+    text-indent: -9999em;
+    width: 6em;
+    height: 6em;
+    border-radius: 50%;
+    background: #0284c7;
+    background: linear-gradient(to right, #0284c7 10%, rgba(2, 132, 199, 0) 42%);
+    position: relative;
+    animation: load3 1.4s infinite linear;
+    transform: translateZ(0);
+  }
+  .loader:before {
+    width: 50%;
+    height: 50%;
+    background: #0284c7;
+    border-radius: 100% 0 0 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    content: "";
+  }
+  .loader:after {
+    background: #0f172a;
+    width: 75%;
+    height: 75%;
+    border-radius: 50%;
+    content: "";
+    margin: auto;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+  }
+  @keyframes load3 {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* Doctor Table & Slot Pills */
+  .slot-pill-group .btn-check + .btn {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    padding: 5px 12px;
+    border-radius: 9999px;
+    transition: var(--transition);
+    margin: 2px;
+  }
+  .slot-pill-group .btn-check:checked + .btn {
+    background: linear-gradient(135deg, #0284c7, #38bdf8);
+    border-color: #38bdf8;
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+  }
+
+  .doctor-avatar-circle {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #0284c7, #10b981);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-xl-11">
+
+      <!-- User Greeting Bar -->
+      <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4 p-3 rounded-3" style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle);">
+        <div class="d-flex align-items-center gap-3">
+          <div class="doctor-avatar-circle">
+            <i class="fa-solid fa-user-check"></i>
+          </div>
+          <div>
+            <span class="text-muted d-block" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em;">Logged In Patient</span>
+            <span class="fw-bold text-white fs-6">Welcome, {{ user.username|default:"Patient" }}</span>
+          </div>
+        </div>
+        <div>
+          <a class="btn btn-outline-danger btn-sm rounded-pill px-3" href="{% url 'logout' %}">
+            <i class="fa-solid fa-right-from-bracket me-1"></i> Sign Out
+          </a>
+        </div>
+      </div>
+
+      <div class="glass-card mb-4">
+        <!-- Header -->
+        <div class="glass-card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <div style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, #0284c7, #38bdf8); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; box-shadow: 0 4px 16px rgba(56, 189, 248, 0.3);">
+              <i class="fa-solid fa-calendar-check"></i>
+            </div>
+            <div>
+              <h2 class="mb-1" style="font-weight: 700; font-size: 1.6rem; letter-spacing: -0.02em;">Book Doctor Consultation</h2>
+              <p class="mb-0 text-muted" style="font-size: 0.9rem;">Find certified medical specialists & schedule video appointments</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search Form -->
+        <form action="/auth/search-and-book-appointment" method="get" class="mb-4">
+          <div class="row g-3 align-items-center">
+            <!-- Location Input -->
+            <div class="col-md-5">
+              <label for="cityID" class="form-label">
+                <span><i class="fa-solid fa-location-dot text-info me-1"></i> Location / City / State</span>
+              </label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input
+                  type="text"
+                  name="state"
+                  class="form-control"
+                  id="cityID"
+                  placeholder="Search city, state or region"
+                />
+              </div>
+            </div>
+
+            <!-- Specialization -->
+            <div class="col-md-5">
+              <label for="inputGroupSelect03" class="form-label">
+                <span><i class="fa-solid fa-stethoscope text-primary me-1"></i> Medical Specialization</span>
+              </label>
+              <select name="specialization" class="form-select" id="inputGroupSelect03">
+                <option selected value="">Choose Specialist Specialization</option>
+                <option value="Allergy & Clinical Immunology">Allergy & Clinical Immunology</option>
+                <option value="Blood Screening">Blood Screening</option>
+                <option value="Cardiology">Cardiology</option>
+                <option value="Dentistry">Dentistry</option>
+                <option value="ENT Specialists">ENT Specialists</option>
+                <option value="Eye Care">Eye Care</option>
+                <option value="Gastroenterologists">Gastroenterologists</option>
+                <option value="Neuroanatomy">Neuroanatomy</option>
+                <option value="Oncologists">Oncologists</option>
+                <option value="Pediatricians">Pediatricians</option>
+                <option value="Physical Therapy">Physical Therapy</option>
+              </select>
+            </div>
+
+            <!-- Submit -->
+            <div class="col-md-2 align-self-end">
+              <button id="sendBtn" type="submit" class="btn btn-primary w-100 py-2">
+                <i class="fa-solid fa-filter me-1"></i> Filter
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Doctors Availability Table -->
+        {% if doctors %}
+        <div class="mt-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold text-white mb-0" style="font-size: 1.1rem;">
+              <i class="fa-solid fa-user-doctor text-info me-2"></i> Available Specialists
+            </h5>
+            <span class="text-muted" style="font-size: 0.85rem;">Select an available time slot to book</span>
+          </div>
+
+          <div class="table-responsive" style="border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden;">
+            <table class="table-glass mb-0">
+              <thead>
+                <tr>
+                  <th style="width: 25%;">Physician Name</th>
+                  <th style="width: 25%;">Specialty</th>
+                  <th style="width: 35%;">Available Time Slots</th>
+                  <th class="text-end" style="width: 15%;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody">
+                {% for doc in doctors %}
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center gap-3">
+                      <div class="doctor-avatar-circle" style="width: 36px; height: 36px; font-size: 14px;">
+                        <i class="fa-solid fa-user-doctor"></i>
+                      </div>
+                      <div>
+                        <span class="fw-bold text-white d-block">{{ doc.name }}</span>
+                        <span class="text-muted" style="font-size: 0.75rem;"><i class="fa-solid fa-circle-check text-success"></i> Verified</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge" style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); color: #7dd3fc; font-weight: 600; font-size: 0.8rem;">
+                      {{ doc.specialization }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="inline-block slot-pill-group">
+                      <input
+                        type="radio"
+                        class="btn-check"
+                        name='{{doc.name|cut:" "}}'
+                        id='doctor{{doc.name|cut:" "}1}'
+                        autocomplete="off"
+                        value="Right Now"
+                        onchange="btnenable(event)"
+                      />
+                      <label class="btn" for='doctor{{doc.name|cut:" "}1}'>
+                        <i class="fa-solid fa-bolt me-1 text-warning"></i> Right Now
+                      </label>
+
+                      <input
+                        type="radio"
+                        class="btn-check"
+                        name='{{doc.name|cut:" "}}'
+                        id='doctor{{doc.name|cut:" "}2}'
+                        autocomplete="off"
+                        value="10-11"
+                        onchange="btnenable(event)"
+                      />
+                      <label class="btn" for='doctor{{doc.name|cut:" "}2}'>10:00 - 11:00</label>
+
+                      <input
+                        type="radio"
+                        class="btn-check"
+                        name='{{doc.name|cut:" "}}'
+                        id='doctor{{doc.name|cut:" "}3}'
+                        autocomplete="off"
+                        value="11-12"
+                        onchange="btnenable(event)"
+                      />
+                      <label class="btn" for='doctor{{doc.name|cut:" "}3}'>11:00 - 12:00</label>
+
+                      <input
+                        type="radio"
+                        class="btn-check"
+                        name='{{doc.name|cut:" "}}'
+                        id='doctor{{doc.name|cut:" "}4}'
+                        autocomplete="off"
+                        value="12-1"
+                        onchange="btnenable(event)"
+                      />
+                      <label class="btn" for='doctor{{doc.name|cut:" "}4}'>12:00 - 13:00</label>
+                    </div>
+                  </td>
+                  <td class="text-end">
+                    <button
+                      type="button"
+                      class="btn btn-primary btn-sm px-3 disabled"
+                      data-bs-toggle="modal"
+                      data-bs-target="#exampleModal"
+                      onclick="book(event)"
+                    >
+                      <i class="fa-solid fa-calendar-plus me-1"></i> Book
+                    </button>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+          <i class="fa-solid fa-user-doctor fs-1 d-block mb-3 opacity-50"></i>
+          <p>No specialists matched your filter. Try clearing filters or searching another city.</p>
+        </div>
+        {% endif %}
+
+        <!-- Video Call Join Button (revealed by JS) -->
+        <div class="row justify-content-center my-4">
+          <button
+            class="d-none btn btn-success align-items-center px-4 py-2"
+            id="videobtn"
+            onclick="videoCall()"
+            style="width: auto;"
+          >
+            <i class="fa-solid fa-video me-2"></i> Join Video Consultation Room
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Booking Modal -->
+<div
+  class="modal fade"
+  id="exampleModal"
+  tabindex="-1"
+  aria-labelledby="exampleModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title d-flex align-items-center gap-2" id="exampleModalLabel">
+          <i class="fa-solid fa-calendar-check text-info"></i> Your Booking Details
+        </h5>
+        <button
+          id="modalcross"
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <p class="text-white mb-2">Doctor Name:</p>
+        <p class="text-white mb-2">Specialist:</p>
+        <p class="text-white mb-2">Time Slot:</p>
+      </div>
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          data-bs-dismiss="modal"
+        >
+          Cancel
+        </button>
+        <button id="modalconfirm" type="button" class="btn btn-primary" data-bs-dismiss="modal">
+          <i class="fa-solid fa-check me-1"></i> Confirm Booking
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- After Meeting Modal -->
+<div
+  class="modal fade"
+  id="exampleModal2"
+  tabindex="-1"
+  aria-labelledby="exampleModalLabel2"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fa-solid fa-heart-pulse text-success me-2"></i> Consultation Completed</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body text-secondary">
+        We hope your doctor consultation went well and provided clarity on your diagnosis and care plan.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Meeting Modal -->
+<div
+  class="modal fade"
+  id="exampleModal3"
+  tabindex="-1"
+  aria-labelledby="exampleModalLabel3"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fa-solid fa-circle-check text-success me-2"></i> Booking Confirmed</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body text-secondary">
+        Your booking has been confirmed! An email with your secure video call link and appointment details has been sent to your inbox.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Understood</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden modal triggers expected by videocallpage.js -->
+<button
+  type="button"
+  style="visibility: hidden; position: absolute;"
+  class="btn btn-primary"
+  data-bs-toggle="modal"
+  id="aftermeetingModal"
+  data-bs-target="#exampleModal2"
+></button>
+<button
+  type="button"
+  style="visibility: hidden; position: absolute;"
+  class="btn btn-primary"
+  id="meetingconfirm"
+  data-bs-toggle="modal"
+  data-bs-target="#exampleModal3"
+></button>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'videocall/videocallpage.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,243 @@
+{% extends "header.html" %}
+{% load static %}
+
+{% block title %}Heart Disease Risk Assessment | AI Diagnostics{% endblock %}
+
+{% block page_badge %}
+  <span class="nav-badge"><i class="fa-solid fa-heart-pulse"></i> Cardiology AI</span>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-9">
+      
+      <div class="glass-card">
+        <!-- Header -->
+        <div class="glass-card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <div style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, #e11d48, #f43f5e); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; box-shadow: 0 4px 16px rgba(244, 63, 94, 0.3);">
+              <i class="fa-solid fa-heart-pulse"></i>
+            </div>
+            <div>
+              <h2 class="mb-1" style="font-weight: 700; font-size: 1.6rem; letter-spacing: -0.02em;">Cardiovascular Risk Prediction</h2>
+              <p class="mb-0 text-muted" style="font-size: 0.9rem;">Multi-parameter clinical screening model evaluating cardiac health biomarkers</p>
+            </div>
+          </div>
+          <!-- Quick test helpers -->
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="fillHeartSample(0)" title="Autofill normal healthy test values">
+              <i class="fa-solid fa-wand-magic-sparkles text-info"></i> Normal Sample
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="fillHeartSample(1)" title="Autofill at-risk cardiac test values">
+              <i class="fa-solid fa-triangle-exclamation text-warning"></i> At-Risk Sample
+            </button>
+          </div>
+        </div>
+
+        <!-- Heart Form -->
+        <form id="heartForm" action="{% url 'heart-disease-predict' %}" method="post">
+          {% csrf_token %}
+
+          <!-- Section 1: Demographics -->
+          <div class="mb-4">
+            <h5 class="mb-3 d-flex align-items-center gap-2" style="font-size: 1rem; color: #38bdf8; font-weight: 600;">
+              <i class="fa-solid fa-user"></i> Patient Demographics
+            </h5>
+            <div class="row g-3">
+              <!-- 1. Age -->
+              <div class="col-md-6">
+                <label for="age" class="form-label">
+                  <span>Age</span>
+                  <span class="unit-hint">Years</span>
+                </label>
+                <input type="number" class="form-control" id="age" name="age" min="1" max="120" placeholder="e.g. 54" required />
+              </div>
+              <!-- 2. Gender -->
+              <div class="col-md-6">
+                <label for="gender" class="form-label">
+                  <span>Biological Sex</span>
+                  <span class="unit-hint">Required</span>
+                </label>
+                <select class="form-select" id="gender" name="gender" required>
+                  <option value="" disabled selected>-- Select gender --</option>
+                  <option value="1">Male</option>
+                  <option value="0">Female</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Clinical Vitals & Pain -->
+          <div class="mb-4">
+            <h5 class="mb-3 d-flex align-items-center gap-2" style="font-size: 1rem; color: #38bdf8; font-weight: 600;">
+              <i class="fa-solid fa-stethoscope"></i> Clinical Signs & Vitals
+            </h5>
+            <div class="row g-3">
+              <!-- 3. Chest Pain Type -->
+              <div class="col-md-4">
+                <label for="ChestPainType" class="form-label">
+                  <span>Chest Pain Type</span>
+                  <span class="unit-hint">Classification</span>
+                </label>
+                <select class="form-select" id="ChestPainType" name="ChestPainType" required>
+                  <option value="" disabled selected>-- Select type --</option>
+                  <option value="3">Typical Angina (TA)</option>
+                  <option value="1">Atypical Angina (ATA)</option>
+                  <option value="2">Non-Anginal Pain (NAP)</option>
+                  <option value="0">Asymptomatic (ASY)</option>
+                </select>
+              </div>
+              <!-- 4. Resting BP -->
+              <div class="col-md-4">
+                <label for="RestingBP" class="form-label">
+                  <span>Resting Blood Pressure</span>
+                  <span class="unit-hint">mm Hg</span>
+                </label>
+                <input type="number" class="form-control" id="RestingBP" name="RestingBP" min="50" max="250" placeholder="e.g. 120 (Normal: 90-120)" required />
+              </div>
+              <!-- 5. Cholesterol -->
+              <div class="col-md-4">
+                <label for="cholestrol" class="form-label">
+                  <span>Serum Cholesterol</span>
+                  <span class="unit-hint">mg / dL</span>
+                </label>
+                <input type="number" class="form-control" id="cholestrol" name="cholestrol" min="50" max="600" placeholder="e.g. 195 (Desirable: <200)" required />
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Diagnostic Tests & Stress Measurements -->
+          <div class="mb-4">
+            <h5 class="mb-3 d-flex align-items-center gap-2" style="font-size: 1rem; color: #38bdf8; font-weight: 600;">
+              <i class="fa-solid fa-wave-square"></i> Electrocardiogram & Stress Evaluation
+            </h5>
+            <div class="row g-3">
+              <!-- 6. Fasting Blood Sugar -->
+              <div class="col-md-6">
+                <label for="fastingBS" class="form-label">
+                  <span>Fasting Blood Sugar</span>
+                  <span class="unit-hint">&gt; 120 mg/dL?</span>
+                </label>
+                <select class="form-select" id="fastingBS" name="fastingBS" required>
+                  <option value="" disabled selected>-- Select status --</option>
+                  <option value="1">1 - Elevated (&gt; 120 mg/dL)</option>
+                  <option value="0">0 - Normal (&le; 120 mg/dL)</option>
+                </select>
+              </div>
+
+              <!-- 7. Resting ECG -->
+              <div class="col-md-6">
+                <label for="RestingECG" class="form-label">
+                  <span>Resting ECG Results</span>
+                  <span class="unit-hint">Waveform</span>
+                </label>
+                <select class="form-select" id="RestingECG" name="RestingECG" required>
+                  <option value="" disabled selected>-- Select ECG pattern --</option>
+                  <option value="1">Normal Waveform</option>
+                  <option value="2">ST-T Wave Abnormality</option>
+                  <option value="0">Left Ventricular Hypertrophy (LVH)</option>
+                </select>
+              </div>
+
+              <!-- 8. Maximum Heart Rate -->
+              <div class="col-md-6">
+                <label for="maxHR" class="form-label">
+                  <span>Maximum Heart Rate</span>
+                  <span class="unit-hint">bpm (60 - 202)</span>
+                </label>
+                <input type="number" class="form-control" id="maxHR" name="maxHR" min="60" max="220" placeholder="e.g. 150" required />
+              </div>
+
+              <!-- 9. Exercise Induced Angina -->
+              <div class="col-md-6">
+                <label for="exercise" class="form-label">
+                  <span>Exercise Induced Angina</span>
+                  <span class="unit-hint">Symptoms upon exertion</span>
+                </label>
+                <select class="form-select" id="exercise" name="exercise" required>
+                  <option value="" disabled selected>-- Select --</option>
+                  <option value="1">Yes (Pain upon exercise)</option>
+                  <option value="0">No</option>
+                </select>
+              </div>
+
+              <!-- 10. OldPeak -->
+              <div class="col-md-6">
+                <label for="oldpeak" class="form-label">
+                  <span>ST Depression (Oldpeak)</span>
+                  <span class="unit-hint">ST segment depression</span>
+                </label>
+                <input type="number" step="0.1" class="form-control" id="oldpeak" name="oldpeak" min="-5" max="10" placeholder="e.g. 0.0 or 1.5" required />
+              </div>
+
+              <!-- 11. ST Slope -->
+              <div class="col-md-6">
+                <label for="st-slope" class="form-label">
+                  <span>ST Segment Slope</span>
+                  <span class="unit-hint">Peak exercise inclination</span>
+                </label>
+                <select class="form-select" id="st-slope" name="st-slope" required>
+                  <option value="" disabled selected>-- Select Slope --</option>
+                  <option value="2">Upsloping (Normal response)</option>
+                  <option value="1">Flat (Equivocal)</option>
+                  <option value="0">Downsloping (High ischemia correlation)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Buttons -->
+          <div class="d-flex flex-column flex-sm-row justify-content-end gap-3 mt-4 pt-3 border-top" style="border-color: var(--border-subtle) !important;">
+            <button type="button" class="btn btn-secondary" onclick="resetHeartForm()">
+              <i class="fa-solid fa-arrow-rotate-left"></i> Reset Form
+            </button>
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="fa-solid fa-heart-pulse"></i> Analyze Cardiovascular Risk
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function resetHeartForm() {
+    document.getElementById("heartForm").reset();
+  }
+
+  function fillHeartSample(type) {
+    if (type === 0) {
+      // Normal / Low Risk Sample
+      document.getElementById('age').value = 45;
+      document.getElementById('gender').value = "1";
+      document.getElementById('ChestPainType').value = "1"; // ATA
+      document.getElementById('RestingBP').value = 115;
+      document.getElementById('cholestrol').value = 185;
+      document.getElementById('fastingBS').value = "0";
+      document.getElementById('RestingECG').value = "1"; // Normal
+      document.getElementById('maxHR').value = 168;
+      document.getElementById('exercise').value = "0"; // No
+      document.getElementById('oldpeak').value = 0.0;
+      document.getElementById('st-slope').value = "2"; // Up
+    } else {
+      // At-Risk Sample
+      document.getElementById('age').value = 62;
+      document.getElementById('gender').value = "1";
+      document.getElementById('ChestPainType').value = "0"; // ASY
+      document.getElementById('RestingBP').value = 150;
+      document.getElementById('cholestrol').value = 275;
+      document.getElementById('fastingBS').value = "1";
+      document.getElementById('RestingECG').value = "2"; // ST
+      document.getElementById('maxHR').value = 122;
+      document.getElementById('exercise').value = "1"; // Yes
+      document.getElementById('oldpeak').value = 2.4;
+      document.getElementById('st-slope').value = "1"; // Flat
+    }
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,339 @@
+{% extends "header.html" %}
+{% load static %}
+
+{% block title %}Alzheimer MRI Deep Learning Classifier | AI Diagnostics{% endblock %}
+
+{% block page_badge %}
+  <span class="nav-badge"><i class="fa-solid fa-brain"></i> Neuroimaging AI</span>
+{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.25.0/axios.min.js"></script>
+<style>
+  /* Imaging Viewports */
+  .mri-viewport {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-md);
+    min-height: 260px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    transition: var(--transition);
+  }
+  .mri-viewport.active {
+    border-style: solid;
+    border-color: var(--primary-light);
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.15);
+  }
+  .mri-viewport img {
+    max-width: 100%;
+    max-height: 250px;
+    object-fit: contain;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Scanline HUD animation */
+  .hud-scanner {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(to right, transparent, #38bdf8, transparent);
+    box-shadow: 0 0 15px #38bdf8;
+    animation: scanAnim 2s infinite ease-in-out;
+    z-index: 10;
+  }
+  @keyframes scanAnim {
+    0% { top: 0; }
+    50% { top: 96%; }
+    100% { top: 0; }
+  }
+
+  /* Upload Dropzone */
+  .upload-dropzone {
+    border: 2px dashed rgba(56, 189, 248, 0.35);
+    border-radius: var(--radius-md);
+    background: rgba(15, 23, 42, 0.5);
+    padding: 30px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .upload-dropzone:hover {
+    border-color: var(--primary-light);
+    background: rgba(56, 189, 248, 0.05);
+    transform: translateY(-2px);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-xl-11">
+      
+      <div class="glass-card">
+        <!-- Header -->
+        <div class="glass-card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <div style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, #8b5cf6, #a855f7); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; box-shadow: 0 4px 16px rgba(168, 85, 247, 0.3);">
+              <i class="fa-solid fa-brain"></i>
+            </div>
+            <div>
+              <h2 class="mb-1" style="font-weight: 700; font-size: 1.6rem; letter-spacing: -0.02em;">Alzheimer MRI Stage Classifier</h2>
+              <p class="mb-0 text-muted" style="font-size: 0.9rem;">Deep neural network classification with Grad-CAM neural attention heatmap visualizer</p>
+            </div>
+          </div>
+          <a href="{% url 'appointment' %}" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-user-doctor text-info"></i> Neurology Consult
+          </a>
+        </div>
+
+        <div class="row g-4">
+          <!-- Left Column: Controls & Upload -->
+          <div class="col-lg-4">
+            <div class="p-3 rounded-3" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle);">
+              <h5 class="mb-3 d-flex align-items-center gap-2" style="font-size: 1rem; color: #a855f7; font-weight: 600;">
+                <i class="fa-solid fa-sliders"></i> Diagnostic Controls
+              </h5>
+
+              <!-- Upload Dropzone -->
+              <label for="mriimg" class="upload-dropzone w-100 d-block mb-3">
+                <i class="fa-solid fa-cloud-arrow-up fs-2 text-info mb-2 d-block"></i>
+                <span class="fw-bold d-block text-white" style="font-size: 0.95rem;">Select Brain MRI Scan</span>
+                <span class="text-muted d-block" style="font-size: 0.8rem;">Supports PNG, JPG, JPEG</span>
+                <input
+                  type="file"
+                  id="mriimg"
+                  accept="image/*"
+                  style="display: none;"
+                  onchange="showPreview(event)"
+                />
+              </label>
+
+              <!-- File status indicator -->
+              <div id="fileSelectedBadge" class="mb-3 d-none align-items-center gap-2 p-2 rounded-2" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); font-size: 0.82rem; color: #34d399;">
+                <i class="fa-solid fa-check-circle"></i> <span id="fileNameText">Image loaded</span>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="d-grid gap-2">
+                {% csrf_token %}
+                <button
+                  onclick="postImage()"
+                  id="tclassi"
+                  class="btn btn-primary disabled"
+                >
+                  <i class="fa-solid fa-microchip me-1"></i> Classify MRI Scan
+                </button>
+                <button
+                  class="btn btn-secondary"
+                  onclick="window.location.reload()"
+                  type="reset"
+                >
+                  <i class="fa-solid fa-rotate-right me-1"></i> Reset
+                </button>
+              </div>
+
+              <!-- Diagnostic Result Summary Box -->
+              <div class="mt-4 p-3 rounded-3" style="background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-subtle);">
+                <span class="text-muted text-uppercase fw-semibold d-block mb-2" style="font-size: 0.75rem; letter-spacing: 0.05em;">AI Staging Prediction</span>
+                <div id="resultContainer">
+                  <span class="Classification d-block fs-5 fw-bold" style="color: #94a3b8;">
+                    No scan evaluated yet
+                  </span>
+                </div>
+                <div id="resultDescription" class="mt-2 text-muted" style="font-size: 0.8rem; line-height: 1.4;">
+                  Upload an axial brain MRI scan and click Classify to run neural diagnosis.
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Middle & Right Columns: Dual HUD Viewports -->
+          <div class="col-lg-8">
+            <div class="row g-3">
+              <!-- Viewport 1: Original MRI Scan -->
+              <div class="col-md-6">
+                <div class="p-3 rounded-3 h-100" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle);">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold" style="font-size: 0.9rem; color: #38bdf8;">
+                      <i class="fa-solid fa-file-medical me-1"></i> Input MRI Scan
+                    </span>
+                    <span class="badge bg-secondary" style="font-size: 0.7rem;">Axial Slice</span>
+                  </div>
+                  
+                  <div class="mri-viewport" id="inputViewport">
+                    <div id="hudScanner" class="hud-scanner"></div>
+                    <img id="imageshow" src="" alt="" style="display: none;" />
+                    <div id="inputPlaceholder" class="text-center text-muted p-4">
+                      <i class="fa-solid fa-image fs-1 d-block mb-2 opacity-50"></i>
+                      <span>No scan loaded</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Viewport 2: Grad-CAM Neural Attention -->
+              <div class="col-md-6">
+                <div class="p-3 rounded-3 h-100" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle);">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold" style="font-size: 0.9rem; color: #a855f7;">
+                      <i class="fa-solid fa-fire-flame-curved me-1"></i> Grad-CAM Attention Heatmap
+                    </span>
+                    <span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; font-size: 0.7rem;">Neural Focus</span>
+                  </div>
+
+                  <div class="mri-viewport" id="camViewport">
+                    <img id="photo" src="" alt="" style="display: none;" />
+                    <div id="camPlaceholder" class="text-center text-muted p-4">
+                      <i class="fa-solid fa-wand-magic-sparkles fs-1 d-block mb-2 opacity-50"></i>
+                      <span>Heatmap visualizes upon classification</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Explanatory Guide Box -->
+            <div class="mt-3 p-3 rounded-3" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle);">
+              <h6 class="text-white fw-bold mb-2" style="font-size: 0.85rem;">
+                <i class="fa-solid fa-circle-info text-info me-1"></i> How Alzheimer MRI Classification Works
+              </h6>
+              <p class="text-muted mb-0" style="font-size: 0.82rem; line-height: 1.6;">
+                The convolutional neural network inspects bilateral hippocampal atrophy, ventricular enlargement, and cortical thinning. Grad-CAM overlays the feature maps to highlight high-gradient focus regions critical to the staging decision.
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Action Links -->
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 mt-4 pt-3 border-top" style="border-color: var(--border-subtle) !important;">
+          <a href="{% url 'appointment' %}" class="btn btn-primary px-4">
+            <i class="fa-solid fa-calendar-check"></i> Book Neurologist Consultation
+          </a>
+          <a href="{% url 'know-your-disease' %}" class="btn btn-secondary px-4">
+            <i class="fa-solid fa-comment-medical"></i> Symptom AI Checker
+          </a>
+          <a href="{% url 'index' %}" class="btn btn-secondary px-4">
+            <i class="fa-solid fa-house"></i> Dashboard
+          </a>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script type="text/javascript">
+  let fileData = new FormData();
+
+  function showPreview(event) {
+    if (event.target.files.length > 0) {
+      const file = event.target.files[0];
+      const classificationBtn = document.getElementById("tclassi");
+      fileData = new FormData();
+      fileData.append("image", file);
+
+      const src = URL.createObjectURL(file);
+      const preview = document.getElementById("imageshow");
+      const placeholder = document.getElementById("inputPlaceholder");
+      const badge = document.getElementById("fileSelectedBadge");
+      const fileNameText = document.getElementById("fileNameText");
+
+      classificationBtn.classList.remove("disabled");
+      preview.src = src;
+      preview.style.display = "block";
+      placeholder.style.display = "none";
+      document.getElementById("inputViewport").classList.add("active");
+
+      badge.classList.remove("d-none");
+      badge.classList.add("d-flex");
+      fileNameText.textContent = file.name;
+    }
+  }
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === name + "=") {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  function postImage() {
+    const classificationBtn = document.getElementById("tclassi");
+    const hud = document.getElementById("hudScanner");
+    const classEl = document.getElementsByClassName("Classification")[0];
+    const descEl = document.getElementById("resultDescription");
+
+    classificationBtn.classList.add("disabled");
+    classificationBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span> Analyzing MRI...`;
+    hud.style.display = "block";
+
+    axios
+      .post("", fileData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          "X-CSRFToken": getCookie("csrftoken"),
+        },
+      })
+      .then((response) => {
+        hud.style.display = "none";
+        classificationBtn.innerHTML = `<i class="fa-solid fa-microchip me-1"></i> Classify MRI Scan`;
+        classificationBtn.classList.remove("disabled");
+
+        const label = response.data.label;
+        classEl.textContent = label;
+
+        // Custom styling based on diagnosis
+        if (label.toLowerCase().includes("non")) {
+          classEl.style.color = "#34d399";
+          descEl.textContent = "No significant cerebral atrophy or dementia patterns detected in this scan.";
+        } else if (label.toLowerCase().includes("very mild")) {
+          classEl.style.color = "#38bdf8";
+          descEl.textContent = "Subtle hippocampal alterations detected. Routine cognitive monitoring advised.";
+        } else if (label.toLowerCase().includes("mild")) {
+          classEl.style.color = "#fbbf24";
+          descEl.textContent = "Mild neurodegenerative patterns present. Neurological evaluation recommended.";
+        } else {
+          classEl.style.color = "#fb7185";
+          descEl.textContent = "Significant volumetric changes correlated with moderate Alzheimer's staging.";
+        }
+
+        const photoEl = document.getElementById("photo");
+        const camPlaceholder = document.getElementById("camPlaceholder");
+        photoEl.src = `data:image/png;base64,${response.data.photo.slice(2, -1)}`;
+        photoEl.style.display = "block";
+        camPlaceholder.style.display = "none";
+        document.getElementById("camViewport").classList.add("active");
+      })
+      .catch((error) => {
+        hud.style.display = "none";
+        classificationBtn.innerHTML = `<i class="fa-solid fa-microchip me-1"></i> Classify MRI Scan`;
+        classificationBtn.classList.remove("disabled");
+        console.error(error);
+        classEl.textContent = "Error running classification";
+        classEl.style.color = "#fb7185";
+      });
+  }
+</script>
+{% endblock %}

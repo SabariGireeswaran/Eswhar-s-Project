@@ -1,0 +1,215 @@
+{% extends "header.html" %}
+{% load static %}
+
+{% block title %}Liver Function Assessment | AI Diagnostics{% endblock %}
+
+{% block page_badge %}
+  <span class="nav-badge"><i class="fa-solid fa-vial-virus"></i> Hepatic AI</span>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-9">
+      
+      <div class="glass-card">
+        <!-- Header -->
+        <div class="glass-card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <div style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, #0284c7, #06b6d4); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; box-shadow: 0 4px 16px rgba(6, 182, 212, 0.3);">
+              <i class="fa-solid fa-vial-virus"></i>
+            </div>
+            <div>
+              <h2 class="mb-1" style="font-weight: 700; font-size: 1.6rem; letter-spacing: -0.02em;">Liver Disease Risk Assessment</h2>
+              <p class="mb-0 text-muted" style="font-size: 0.9rem;">Comprehensive analysis of hepatic biochemical enzymes and serum protein panels</p>
+            </div>
+          </div>
+          <!-- Quick test helpers -->
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="fillLiverSample(0)" title="Autofill normal healthy liver values">
+              <i class="fa-solid fa-wand-magic-sparkles text-info"></i> Normal Sample
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="fillLiverSample(1)" title="Autofill elevated hepatic values">
+              <i class="fa-solid fa-triangle-exclamation text-warning"></i> At-Risk Sample
+            </button>
+          </div>
+        </div>
+
+        <!-- Liver Form -->
+        <form id="liverForm" action="{% url 'liver-predict' %}" method="post">
+          {% csrf_token %}
+
+          <!-- Section 1: Demographics -->
+          <div class="mb-4">
+            <h5 class="mb-3 d-flex align-items-center gap-2" style="font-size: 1rem; color: #38bdf8; font-weight: 600;">
+              <i class="fa-solid fa-user"></i> Patient Demographics
+            </h5>
+            <div class="row g-3">
+              <!-- 1. Age -->
+              <div class="col-md-6">
+                <label for="age" class="form-label">
+                  <span>Patient Age</span>
+                  <span class="unit-hint">Years</span>
+                </label>
+                <input type="number" class="form-control" id="age" name="age" min="1" max="120" placeholder="e.g. 42" required />
+              </div>
+              <!-- 2. Gender -->
+              <div class="col-md-6">
+                <label for="gender" class="form-label">
+                  <span>Biological Sex</span>
+                  <span class="unit-hint">Required</span>
+                </label>
+                <select class="form-select" id="gender" name="gender" required>
+                  <option value="" disabled selected>-- Select gender --</option>
+                  <option value="0">Female</option>
+                  <option value="1">Male</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Bilirubin Markers -->
+          <div class="mb-4">
+            <h5 class="mb-3 d-flex align-items-center gap-2" style="font-size: 1rem; color: #38bdf8; font-weight: 600;">
+              <i class="fa-solid fa-droplet"></i> Bilirubin Concentrations
+            </h5>
+            <div class="row g-3">
+              <!-- 3. Total Bilirubin -->
+              <div class="col-md-6">
+                <label for="tsb" class="form-label">
+                  <span>Total Bilirubin (TSB)</span>
+                  <span class="unit-hint">mg / dL (Normal: 0.1 - 1.2)</span>
+                </label>
+                <input type="number" step="0.1" class="form-control" id="tsb" name="tsb" min="0" max="80" placeholder="e.g. 0.8" required />
+                <div class="form-helper"><i class="fa-solid fa-circle-info"></i> Direct plus indirect bilirubin breakdown</div>
+              </div>
+              <!-- 4. Direct Bilirubin -->
+              <div class="col-md-6">
+                <label for="db" class="form-label">
+                  <span>Direct Bilirubin (Conjugated)</span>
+                  <span class="unit-hint">mg / dL (Normal: 0.0 - 0.4)</span>
+                </label>
+                <input type="number" step="0.1" class="form-control" id="db" name="db" min="0" max="40" placeholder="e.g. 0.2" required />
+                <div class="form-helper"><i class="fa-solid fa-circle-info"></i> Water-soluble conjugated bilirubin in circulation</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Liver Enzyme Markers -->
+          <div class="mb-4">
+            <h5 class="mb-3 d-flex align-items-center gap-2" style="font-size: 1rem; color: #38bdf8; font-weight: 600;">
+              <i class="fa-solid fa-dna"></i> Hepatic Enzyme Activity
+            </h5>
+            <div class="row g-3">
+              <!-- 5. Alkaline Phosphatase -->
+              <div class="col-md-4">
+                <label for="alp" class="form-label">
+                  <span>Alkaline Phosphatase (ALP)</span>
+                  <span class="unit-hint">U / L (44 - 147)</span>
+                </label>
+                <input type="number" class="form-control" id="alp" name="alp" min="10" max="2500" placeholder="e.g. 180" required />
+              </div>
+              <!-- 6. ALT -->
+              <div class="col-md-4">
+                <label for="alt" class="form-label">
+                  <span>Alanine Aminotransferase (ALT)</span>
+                  <span class="unit-hint">U / L (7 - 56)</span>
+                </label>
+                <input type="number" class="form-control" id="alt" name="alt" min="5" max="2000" placeholder="e.g. 28" required />
+              </div>
+              <!-- 7. AST -->
+              <div class="col-md-4">
+                <label for="ast" class="form-label">
+                  <span>Aspartate Aminotransferase (AST)</span>
+                  <span class="unit-hint">U / L (5 - 40)</span>
+                </label>
+                <input type="number" class="form-control" id="ast" name="ast" min="5" max="2000" placeholder="e.g. 32" required />
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: Protein Profile -->
+          <div class="mb-4">
+            <h5 class="mb-3 d-flex align-items-center gap-2" style="font-size: 1rem; color: #38bdf8; font-weight: 600;">
+              <i class="fa-solid fa-vial"></i> Serum Protein Composition
+            </h5>
+            <div class="row g-3">
+              <!-- 8. Total Proteins -->
+              <div class="col-md-4">
+                <label for="tp" class="form-label">
+                  <span>Total Proteins</span>
+                  <span class="unit-hint">g / dL (6.0 - 8.3)</span>
+                </label>
+                <input type="number" step="0.1" class="form-control" id="tp" name="tp" min="1" max="15" placeholder="e.g. 7.0" required />
+              </div>
+              <!-- 9. Albumin -->
+              <div class="col-md-4">
+                <label for="alb" class="form-label">
+                  <span>Albumin</span>
+                  <span class="unit-hint">g / dL (3.5 - 5.5)</span>
+                </label>
+                <input type="number" step="0.1" class="form-control" id="alb" name="alb" min="1" max="10" placeholder="e.g. 4.1" required />
+              </div>
+              <!-- 10. A/G Ratio -->
+              <div class="col-md-4">
+                <label for="agr" class="form-label">
+                  <span>Albumin / Globulin Ratio</span>
+                  <span class="unit-hint">Ratio (0.8 - 2.0)</span>
+                </label>
+                <input type="number" step="0.01" class="form-control" id="agr" name="agr" min="0.1" max="5" placeholder="e.g. 1.2" required />
+              </div>
+            </div>
+          </div>
+
+          <!-- Buttons -->
+          <div class="d-flex flex-column flex-sm-row justify-content-end gap-3 mt-4 pt-3 border-top" style="border-color: var(--border-subtle) !important;">
+            <button type="button" class="btn btn-secondary" onclick="resetLiverForm()">
+              <i class="fa-solid fa-arrow-rotate-left"></i> Reset Form
+            </button>
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="fa-solid fa-microscope"></i> Analyze Hepatic Panel
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function resetLiverForm() {
+    document.getElementById("liverForm").reset();
+  }
+
+  function fillLiverSample(type) {
+    if (type === 0) {
+      // Normal Sample
+      document.getElementById('age').value = 35;
+      document.getElementById('gender').value = "1";
+      document.getElementById('tsb').value = 0.8;
+      document.getElementById('db').value = 0.2;
+      document.getElementById('alp').value = 120;
+      document.getElementById('alt').value = 24;
+      document.getElementById('ast').value = 26;
+      document.getElementById('tp').value = 7.2;
+      document.getElementById('alb').value = 4.2;
+      document.getElementById('agr').value = 1.4;
+    } else {
+      // At-Risk Sample
+      document.getElementById('age').value = 58;
+      document.getElementById('gender').value = "1";
+      document.getElementById('tsb').value = 3.6;
+      document.getElementById('db').value = 1.8;
+      document.getElementById('alp').value = 285;
+      document.getElementById('alt').value = 92;
+      document.getElementById('ast').value = 88;
+      document.getElementById('tp').value = 5.8;
+      document.getElementById('alb').value = 2.8;
+      document.getElementById('agr').value = 0.65;
+    }
+  }
+</script>
+{% endblock %}

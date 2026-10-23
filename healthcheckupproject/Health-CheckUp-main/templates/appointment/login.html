@@ -1,0 +1,53 @@
+{% extends "header.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Sign In | Health Checkup AI Diagnostics{% endblock %}
+
+{% block page_badge %}
+  <span class="nav-badge"><i class="fa-solid fa-shield-halved"></i> Member Authentication</span>
+{% endblock %}
+
+{% block content %}      
+<div class="container py-4">
+  <div class="portal-card">
+    <div class="text-center mb-4">
+      <div class="portal-brand-icon mx-auto mb-3" style="width: 56px; height: 56px; font-size: 26px; border-radius: 16px;">
+        <i class="fa-solid fa-user-doctor"></i>
+      </div>
+      <h2 style="font-weight: 800; font-size: 1.7rem; letter-spacing: -0.02em;">Welcome Back</h2>
+      <p style="color: #94a3b8; font-size: 0.92rem;">Sign in to access the AI Health Checkup suite and specialist consultations</p>
+    </div>
+
+    <!-- Message alerts -->
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %} py-2 px-3 mb-3 rounded-2" style="font-size: 0.88rem; display: flex; align-items: center; gap: 8px;">
+          {% if message.tags == 'error' %}
+            <i class="fa-solid fa-circle-exclamation"></i>
+          {% elif message.tags == 'success' %}
+            <i class="fa-solid fa-circle-check"></i>
+          {% else %}
+            <i class="fa-solid fa-circle-info"></i>
+          {% endif %}
+          <span>{{ message }}</span>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="POST" novalidate>
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+      {{ login_form|crispy }}
+      <button class="btn btn-primary w-100 mt-4 py-2" type="submit" style="font-size: 0.95rem;">
+        <i class="fa-solid fa-arrow-right-to-bracket me-2"></i> Sign In to Portal
+      </button>
+    </form>
+    
+    <div class="text-center mt-4 pt-3 border-top" style="font-size: 0.9rem; color: #94a3b8; border-color: var(--border-subtle) !important;">
+      Don't have an account yet? <a href="{% url 'register' %}" style="font-weight: 600; color: var(--primary-light);">Create an Account</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

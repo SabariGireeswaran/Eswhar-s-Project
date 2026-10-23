@@ -1,0 +1,160 @@
+{% extends "header.html" %}
+{% load static %}
+
+{% block title %}Liver Health Panel Results | AI Diagnostics{% endblock %}
+
+{% block page_badge %}
+  <span class="nav-badge"><i class="fa-solid fa-vial-virus"></i> Hepatic Panel Report</span>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-9">
+      
+      <div class="glass-card">
+        
+        {% if pred == 1 %}
+          <!-- High Risk Result -->
+          <div class="result-hero danger">
+            <div class="result-icon-ring danger">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <span class="badge px-3 py-2 rounded-pill mb-3" style="background: rgba(244, 63, 94, 0.2); border: 1px solid rgba(244, 63, 94, 0.4); color: #fb7185; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">
+              Elevated Hepatic Risk Detected
+            </span>
+            <h2 style="font-weight: 800; font-size: 2rem; letter-spacing: -0.02em;">Risk Level: High</h2>
+            <p class="text-secondary mx-auto mt-2" style="max-width: 540px; font-size: 0.95rem;">
+              The predictive model identified patterns consistent with hepatic inflammation or liver disease based on your enzyme and bilirubin profiles.
+            </p>
+          </div>
+
+          <!-- Medical Advice Box -->
+          <div class="p-4 rounded-3 mb-4" style="background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.2);">
+            <h5 class="d-flex align-items-center gap-2 mb-3" style="color: #fda4af; font-size: 1.05rem; font-weight: 700;">
+              <i class="fa-solid fa-notes-medical"></i> Recommended Hepatology Actions:
+            </h5>
+            <ul class="mb-0 ps-3 text-secondary" style="font-size: 0.9rem; line-height: 1.8;">
+              <li>Consult a <strong>Gastroenterologist / Hepatologist</strong> for comprehensive liver function testing and ultrasound imaging.</li>
+              <li>Refrain completely from alcohol consumption and avoid hepatotoxic medications or unverified supplements.</li>
+              <li>Maintain adequate hydration and adopt a liver-friendly, antioxidant-rich diet.</li>
+            </ul>
+          </div>
+
+        {% else %}
+          <!-- Low Risk / Healthy Result -->
+          <div class="result-hero success">
+            <div class="result-icon-ring success">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <span class="badge px-3 py-2 rounded-pill mb-3" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">
+              Healthy Hepatic Function
+            </span>
+            <h2 style="font-weight: 800; font-size: 2rem; letter-spacing: -0.02em;">Risk Level: Low / Normal</h2>
+            <p class="text-secondary mx-auto mt-2" style="max-width: 540px; font-size: 0.95rem;">
+              Your liver enzyme concentrations, bilirubin indicators, and serum proteins align with standard healthy reference values.
+            </p>
+          </div>
+
+          <!-- Preventive Tips -->
+          <div class="p-4 rounded-3 mb-4" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2);">
+            <h5 class="d-flex align-items-center gap-2 mb-3" style="color: #6ee7b7; font-size: 1.05rem; font-weight: 700;">
+              <i class="fa-solid fa-shield-halved"></i> Liver Wellness Best Practices:
+            </h5>
+            <ul class="mb-0 ps-3 text-secondary" style="font-size: 0.9rem; line-height: 1.8;">
+              <li>Stay active to prevent non-alcoholic fatty liver disease (NAFLD).</li>
+              <li>Eat a diet rich in cruciferous vegetables, green tea, and healthy unsaturated fats.</li>
+              <li>Schedule regular annual health checkups to monitor metabolic trends.</li>
+            </ul>
+          </div>
+        {% endif %}
+
+        <!-- Laboratory Biomarker Comparison Table -->
+        <div class="mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 style="font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em;">
+              <i class="fa-solid fa-table-list text-info me-2"></i> Patient Biomarker Analysis
+            </h4>
+            <span class="text-muted" style="font-size: 0.85rem;">Patient Age: {{ out_features.age }} | Gender: {% if out_features.gender == '1' %}Male{% else %}Female{% endif %}</span>
+          </div>
+
+          <div class="table-responsive" style="border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); overflow: hidden;">
+            <table class="table-glass">
+              <thead>
+                <tr>
+                  <th>Biomarker / Test</th>
+                  <th>Your Reported Value</th>
+                  <th>Standard Reference Range</th>
+                  <th class="text-end">Category</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Total Bilirubin (TSB)</strong></td>
+                  <td><span class="text-info fw-bold">{{ out_features.tsb }}</span> mg/dL</td>
+                  <td class="text-secondary">0.1 - 1.2 mg/dL</td>
+                  <td class="text-end"><span class="badge bg-secondary">Bilirubin</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Direct Bilirubin (DB)</strong></td>
+                  <td><span class="text-info fw-bold">{{ out_features.db }}</span> mg/dL</td>
+                  <td class="text-secondary">0.0 - 0.4 mg/dL</td>
+                  <td class="text-end"><span class="badge bg-secondary">Bilirubin</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Alkaline Phosphatase (ALP)</strong></td>
+                  <td><span class="text-info fw-bold">{{ out_features.alp }}</span> U/L</td>
+                  <td class="text-secondary">44 - 147 U/L</td>
+                  <td class="text-end"><span class="badge bg-secondary">Enzyme</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Alanine Aminotransferase (ALT)</strong></td>
+                  <td><span class="text-info fw-bold">{{ out_features.alt }}</span> U/L</td>
+                  <td class="text-secondary">7 - 56 U/L</td>
+                  <td class="text-end"><span class="badge bg-secondary">Enzyme</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Aspartate Aminotransferase (AST)</strong></td>
+                  <td><span class="text-info fw-bold">{{ out_features.ast }}</span> U/L</td>
+                  <td class="text-secondary">5 - 40 U/L</td>
+                  <td class="text-end"><span class="badge bg-secondary">Enzyme</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Total Proteins</strong></td>
+                  <td><span class="text-info fw-bold">{{ out_features.tp }}</span> g/dL</td>
+                  <td class="text-secondary">6.0 - 8.3 g/dL</td>
+                  <td class="text-end"><span class="badge bg-secondary">Protein</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Albumin</strong></td>
+                  <td><span class="text-info fw-bold">{{ out_features.alb }}</span> g/dL</td>
+                  <td class="text-secondary">3.5 - 5.5 g/dL</td>
+                  <td class="text-end"><span class="badge bg-secondary">Protein</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Albumin / Globulin Ratio</strong></td>
+                  <td><span class="text-info fw-bold">{{ out_features.agr }}</span></td>
+                  <td class="text-secondary">0.8 - 2.0</td>
+                  <td class="text-end"><span class="badge bg-secondary">Ratio</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 pt-3 border-top" style="border-color: var(--border-subtle) !important;">
+          <a href="{% url 'liver-view' %}" class="btn btn-primary px-4">
+            <i class="fa-solid fa-arrow-rotate-left"></i> Retake Assessment
+          </a>
+          <a href="{% url 'index' %}" class="btn btn-secondary px-4">
+            <i class="fa-solid fa-house"></i> Dashboard
+          </a>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

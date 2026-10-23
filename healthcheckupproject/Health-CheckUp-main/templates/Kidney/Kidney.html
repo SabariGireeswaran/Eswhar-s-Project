@@ -1,0 +1,179 @@
+{% extends "header.html" %}
+{% load static %}
+
+{% block title %}Kidney Tumor CAD Diagnosis | AI Diagnostics{% endblock %}
+
+{% block page_badge %}
+  <span class="nav-badge"><i class="fa-solid fa-lungs"></i> Kidney CAD AI</span>
+{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.25.0/axios.min.js"></script>
+<style>
+  .mri-viewport {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-md);
+    min-height: 260px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    transition: var(--transition);
+  }
+  .mri-viewport img {
+    max-width: 100%;
+    max-height: 250px;
+    object-fit: contain;
+    border-radius: var(--radius-sm);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-xl-11">
+      
+      <div class="glass-card">
+        <!-- Header -->
+        <div class="glass-card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <div style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, #0284c7, #38bdf8); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; box-shadow: 0 4px 16px rgba(56, 189, 248, 0.3);">
+              <i class="fa-solid fa-lungs"></i>
+            </div>
+            <div>
+              <h2 class="mb-1" style="font-weight: 700; font-size: 1.6rem; letter-spacing: -0.02em;">Kidney Tumor CAD Diagnosis</h2>
+              <p class="mb-0 text-muted" style="font-size: 0.9rem;">Computer-aided diagnosis tool for renal tumor localization & classification</p>
+            </div>
+          </div>
+          <a href="{% url 'index' %}" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-arrow-left me-1"></i> Dashboard
+          </a>
+        </div>
+
+        <div class="row g-4">
+          <!-- Control Panel -->
+          <div class="col-lg-4">
+            <div class="p-3 rounded-3" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle);">
+              <h5 class="mb-3 d-flex align-items-center gap-2" style="font-size: 1rem; color: #38bdf8; font-weight: 600;">
+                <i class="fa-solid fa-sliders"></i> Diagnostic Controls
+              </h5>
+
+              <label class="btn btn-primary w-100 mb-3" for="mriphoto">
+                <i class="fa-solid fa-upload me-2"></i> Load Input Image
+              </label>
+              <input
+                type="file"
+                id="mriphoto"
+                accept="image/*"
+                style="display: none"
+                onchange="showPreview(event)"
+              />
+
+              <div class="d-grid gap-2">
+                <button
+                  onclick="postImage()"
+                  id="tclassi"
+                  class="btn btn-primary disabled"
+                >
+                  <i class="fa-solid fa-microchip me-1"></i> Tumor Classification
+                </button>
+                <button class="btn btn-secondary disabled">
+                  <i class="fa-solid fa-crosshairs me-1"></i> Tumor Localization
+                </button>
+                <button
+                  class="btn btn-secondary"
+                  onclick="window.location.reload()"
+                  type="reset"
+                >
+                  <i class="fa-solid fa-rotate-right me-1"></i> Reset
+                </button>
+              </div>
+
+              <!-- Staging / Classification Display -->
+              <div class="mt-4 p-3 rounded-3" style="background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-subtle);">
+                <span class="text-muted text-uppercase fw-semibold d-block mb-1" style="font-size: 0.75rem;">Classification Output</span>
+                <span class="Classification fs-5 fw-bold text-white d-block">Pending Scan</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dual Viewports -->
+          <div class="col-lg-8">
+            <div class="row g-3">
+              <!-- Viewport 1 -->
+              <div class="col-md-6">
+                <div class="p-3 rounded-3 h-100" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle);">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold" style="font-size: 0.9rem; color: #38bdf8;">
+                      <i class="fa-solid fa-file-image me-1"></i> Input Kidney MRI
+                    </span>
+                  </div>
+                  <div class="mri-viewport">
+                    <img id="imageshow" src="" alt="" style="display: none;" />
+                    <div id="kidneyPlaceholder" class="text-center text-muted p-4">
+                      <i class="fa-solid fa-image fs-1 d-block mb-2 opacity-50"></i>
+                      <span>No scan loaded</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Viewport 2 -->
+              <div class="col-md-6">
+                <div class="p-3 rounded-3 h-100" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle);">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold" style="font-size: 0.9rem; color: #10b981;">
+                      <i class="fa-solid fa-draw-polygon me-1"></i> Tumor Localization
+                    </span>
+                  </div>
+                  <div class="mri-viewport">
+                    <div class="text-center text-muted p-4">
+                      <i class="fa-solid fa-crosshairs fs-1 d-block mb-2 opacity-50"></i>
+                      <span>Bounding box visualizer</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script type="text/javascript">
+  let fileData;
+  function showPreview(event) {
+    if (event.target.files.length > 0) {
+      var Classification = document.getElementById("tclassi");
+      fileData = event.target.files[0];
+      var src = URL.createObjectURL(event.target.files[0]);
+      var preview = document.getElementById("imageshow");
+      var placeholder = document.getElementById("kidneyPlaceholder");
+      Classification.classList.remove("disabled");
+      preview.src = src;
+      preview.style.display = "block";
+      placeholder.style.display = "none";
+    }
+  }
+  function postImage() {
+    axios
+      .post(`${window.location.href}/fafa`)
+      .then((response) => {
+        console.log(response);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  }
+</script>
+{% endblock %}

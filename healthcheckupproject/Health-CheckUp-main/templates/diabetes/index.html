@@ -1,0 +1,262 @@
+{% extends "header.html" %}
+{% load static %}
+
+{% block title %}Diabetes Risk Assessment | AI Diagnostics{% endblock %}
+
+{% block page_badge %}
+  <span class="nav-badge"><i class="fa-solid fa-droplet"></i> Diabetes AI</span>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-9">
+      
+      <!-- Diagnostic Card -->
+      <div class="glass-card">
+        <!-- Header -->
+        <div class="glass-card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <div style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, #0284c7, #38bdf8); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; box-shadow: 0 4px 16px rgba(56, 189, 248, 0.3);">
+              <i class="fa-solid fa-droplet"></i>
+            </div>
+            <div>
+              <h2 class="mb-1" style="font-weight: 700; font-size: 1.6rem; letter-spacing: -0.02em;">Diabetes Risk Prediction</h2>
+              <p class="mb-0 text-muted" style="font-size: 0.9rem;">Machine learning metabolic risk assessment based on clinical parameters</p>
+            </div>
+          </div>
+          <!-- Quick test helpers -->
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="fillSample(0)" title="Autofill normal healthy test values">
+              <i class="fa-solid fa-wand-magic-sparkles text-info"></i> Normal Sample
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="fillSample(1)" title="Autofill elevated diabetic test values">
+              <i class="fa-solid fa-triangle-exclamation text-warning"></i> At-Risk Sample
+            </button>
+          </div>
+        </div>
+
+        <!-- Assessment Form -->
+        <form id="diabetesForm" action="{% url 'diabetes-predict' %}" method="post">
+          {% csrf_token %}
+          
+          <div class="row g-4">
+            <!-- 1. Pregnancies -->
+            <div class="col-md-6">
+              <label for="pregnancies" class="form-label">
+                <span><i class="fa-solid fa-person-breastfeeding text-info me-1"></i> Pregnancies</span>
+                <span class="unit-hint">Count (0+)</span>
+              </label>
+              <input 
+                type="number" 
+                class="form-control" 
+                id="pregnancies" 
+                name="pregnancies" 
+                min="0" 
+                max="20" 
+                placeholder="e.g. 1 (0 for males)" 
+                required 
+              />
+              <div class="form-helper">
+                <i class="fa-solid fa-circle-info"></i> Number of times pregnant (enter 0 if not applicable)
+              </div>
+            </div>
+
+            <!-- 2. Glucose -->
+            <div class="col-md-6">
+              <label for="glucose" class="form-label">
+                <span><i class="fa-solid fa-cubes-stacked text-warning me-1"></i> Plasma Glucose</span>
+                <span class="unit-hint">mg / dL</span>
+              </label>
+              <input 
+                type="number" 
+                class="form-control" 
+                id="glucose" 
+                name="glucose" 
+                min="0" 
+                max="300" 
+                placeholder="e.g. 110 (Normal: 70-140)" 
+                required 
+              />
+              <div class="form-helper">
+                <i class="fa-solid fa-circle-info"></i> 2-hour oral glucose tolerance test concentration
+              </div>
+            </div>
+
+            <!-- 3. Diastolic BP -->
+            <div class="col-md-6">
+              <label for="bp" class="form-label">
+                <span><i class="fa-solid fa-heart-pulse text-danger me-1"></i> Diastolic Blood Pressure</span>
+                <span class="unit-hint">mm Hg</span>
+              </label>
+              <input 
+                type="number" 
+                class="form-control" 
+                id="bp" 
+                name="bp" 
+                min="0" 
+                max="200" 
+                placeholder="e.g. 72 (Normal: 60-80)" 
+                required 
+              />
+              <div class="form-helper">
+                <i class="fa-solid fa-circle-info"></i> Resting diastolic arterial pressure
+              </div>
+            </div>
+
+            <!-- 4. Skin Thickness -->
+            <div class="col-md-6">
+              <label for="skin-thickness" class="form-label">
+                <span><i class="fa-solid fa-hand-dots text-primary me-1"></i> Triceps Skin Fold</span>
+                <span class="unit-hint">mm</span>
+              </label>
+              <input 
+                type="number" 
+                class="form-control" 
+                id="skin-thickness" 
+                name="skin-thickness" 
+                min="0" 
+                max="100" 
+                placeholder="e.g. 23 (Typical: 10-50)" 
+                required 
+              />
+              <div class="form-helper">
+                <i class="fa-solid fa-circle-info"></i> Subcutaneous fat gauge measurement
+              </div>
+            </div>
+
+            <!-- 5. Insulin -->
+            <div class="col-md-6">
+              <label for="insulin" class="form-label">
+                <span><i class="fa-solid fa-syringe text-success me-1"></i> Serum Insulin</span>
+                <span class="unit-hint">&mu;U / mL</span>
+              </label>
+              <input 
+                type="number" 
+                class="form-control" 
+                id="insulin" 
+                name="insulin" 
+                min="0" 
+                max="900" 
+                placeholder="e.g. 85 (Normal: 15-276)" 
+                required 
+              />
+              <div class="form-helper">
+                <i class="fa-solid fa-circle-info"></i> 2-Hour post-glucose serum insulin level
+              </div>
+            </div>
+
+            <!-- 6. BMI -->
+            <div class="col-md-6">
+              <label for="bmi" class="form-label">
+                <span><i class="fa-solid fa-weight-scale text-info me-1"></i> Body Mass Index (BMI)</span>
+                <span class="unit-hint">kg / m&sup2;</span>
+              </label>
+              <input 
+                type="number" 
+                step="0.1" 
+                class="form-control" 
+                id="bmi" 
+                name="bmi" 
+                min="10" 
+                max="70" 
+                placeholder="e.g. 24.5 (Normal: 18.5-24.9)" 
+                required 
+              />
+              <div class="form-helper">
+                <i class="fa-solid fa-circle-info"></i> Body weight relative to square of height
+              </div>
+            </div>
+
+            <!-- 7. Diabetes Pedigree Function -->
+            <div class="col-md-6">
+              <label for="pedigree-func" class="form-label">
+                <span><i class="fa-solid fa-dna text-purple me-1" style="color: #a855f7;"></i> Pedigree Genetic Function</span>
+                <span class="unit-hint">Score (0.05 - 2.5)</span>
+              </label>
+              <input 
+                type="number" 
+                step="0.001" 
+                class="form-control" 
+                id="pedigree-func" 
+                name="pedigree-func" 
+                min="0" 
+                max="3" 
+                placeholder="e.g. 0.35" 
+                required 
+              />
+              <div class="form-helper">
+                <i class="fa-solid fa-circle-info"></i> Family history genetic diabetes likelihood score
+              </div>
+            </div>
+
+            <!-- 8. Age -->
+            <div class="col-md-6">
+              <label for="age" class="form-label">
+                <span><i class="fa-solid fa-calendar-days text-secondary me-1"></i> Patient Age</span>
+                <span class="unit-hint">Years</span>
+              </label>
+              <input 
+                type="number" 
+                class="form-control" 
+                id="age" 
+                name="age" 
+                min="1" 
+                max="120" 
+                placeholder="e.g. 38" 
+                required 
+              />
+              <div class="form-helper">
+                <i class="fa-solid fa-circle-info"></i> Chronological age in completed years
+              </div>
+            </div>
+          </div>
+
+          <!-- Buttons -->
+          <div class="d-flex flex-column flex-sm-row justify-content-end gap-3 mt-5 pt-3 border-top" style="border-color: var(--border-subtle) !important;">
+            <button type="button" class="btn btn-secondary" onclick="resetForm()">
+              <i class="fa-solid fa-arrow-rotate-left"></i> Reset Fields
+            </button>
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="fa-solid fa-chart-line"></i> Analyze Diabetes Risk
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function resetForm() {
+    document.getElementById("diabetesForm").reset();
+  }
+
+  function fillSample(type) {
+    if (type === 0) {
+      // Normal Healthy
+      document.getElementById('pregnancies').value = 1;
+      document.getElementById('glucose').value = 95;
+      document.getElementById('bp').value = 72;
+      document.getElementById('skin-thickness').value = 22;
+      document.getElementById('insulin').value = 65;
+      document.getElementById('bmi').value = 22.4;
+      document.getElementById('pedigree-func').value = 0.285;
+      document.getElementById('age').value = 28;
+    } else {
+      // High Risk
+      document.getElementById('pregnancies').value = 5;
+      document.getElementById('glucose').value = 168;
+      document.getElementById('bp').value = 88;
+      document.getElementById('skin-thickness').value = 36;
+      document.getElementById('insulin').value = 210;
+      document.getElementById('bmi').value = 34.2;
+      document.getElementById('pedigree-func').value = 0.785;
+      document.getElementById('age').value = 52;
+    }
+  }
+</script>
+{% endblock %}

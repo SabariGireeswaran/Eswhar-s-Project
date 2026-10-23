@@ -1,0 +1,339 @@
+{% extends "header.html" %}
+{% load static %}
+
+{% block title %}AI Symptom Checker & Sound Recorder | Health Checkup{% endblock %}
+
+{% block page_badge %}
+  <span class="nav-badge"><i class="fa-solid fa-virus"></i> Symptom AI</span>
+{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.25.0/axios.min.js"></script>
+<style>
+  /* Symptom Card Styling */
+  .symptom-input-deck {
+    min-height: 220px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  /* Audio Recording Deck */
+  .audio-deck {
+    min-height: 220px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  #statusShow {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--primary-light);
+    margin: 10px 0;
+  }
+
+  /* Accordion results custom styling */
+  .accordion-item, .accordian-item {
+    background: rgba(15, 23, 42, 0.8) !important;
+    border: 1px solid var(--border-subtle) !important;
+    border-radius: var(--radius-sm) !important;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+
+  .accordion-button {
+    background: rgba(15, 23, 42, 0.9) !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    font-size: 1.05rem;
+    box-shadow: none !important;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .accordion-button:not(.collapsed) {
+    color: var(--primary-light) !important;
+    background: rgba(30, 41, 59, 0.9) !important;
+  }
+
+  .accordion-body {
+    background: rgba(15, 23, 42, 0.6) !important;
+    color: var(--text-secondary);
+  }
+
+  .accordion-body .card {
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+  }
+  .accordion-body .card-header {
+    background: rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid var(--border-subtle);
+    font-weight: 600;
+    color: var(--primary-light);
+  }
+  .accordion-body .list-group-item {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+  }
+
+  .symptoms .input-group-text {
+    background: rgba(56, 189, 248, 0.1);
+    border-color: rgba(56, 189, 248, 0.25);
+    color: var(--primary-light);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="body" class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-xl-11">
+      
+      <div class="glass-card mb-4">
+        <!-- Header -->
+        <div class="glass-card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <div style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, #0284c7, #10b981); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);">
+              <i class="fa-solid fa-stethoscope"></i>
+            </div>
+            <div>
+              <h2 class="mb-1" style="font-weight: 700; font-size: 1.6rem; letter-spacing: -0.02em;">Know Your Disease</h2>
+              <p class="mb-0 text-muted" style="font-size: 0.9rem;">Multi-modal AI symptom analysis through interactive text tags or voice recording</p>
+            </div>
+          </div>
+          <a href="{% url 'appointment' %}" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-user-doctor"></i> Book Doctor Consultation
+          </a>
+        </div>
+
+        <div class="row g-4">
+          <!-- Card 1: Text Symptoms -->
+          <div class="col-lg-6">
+            <div class="p-4 rounded-3 h-100" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); display: flex; flex-direction: column;">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0 fw-bold text-white" style="font-size: 1.05rem;">
+                  <i class="fa-solid fa-keyboard text-info me-2"></i> Type Symptoms
+                </h5>
+                <span class="badge bg-secondary" style="font-size: 0.75rem;">Text Mode</span>
+              </div>
+              <p class="text-muted" style="font-size: 0.85rem;">Add one or more symptoms you are experiencing (e.g. fever, cough, joint pain):</p>
+
+              <!-- Dynamic Symptoms Container -->
+              <div class="symptom-input-deck flex-grow-1" id="symptoms"></div>
+
+              <!-- Buttons -->
+              <div class="row g-2 justify-content-center" id="button">
+                <div class="col-sm-6">
+                  <button class="btn btn-secondary w-100" id="addSymptoms">
+                    <i class="fa-solid fa-plus text-info"></i> Add Symptom
+                  </button>
+                </div>
+                <div class="col-sm-6">
+                  {% csrf_token %}
+                  <button
+                    type="button"
+                    class="btn btn-primary w-100"
+                    data-bs-toggle="modal"
+                    data-bs-target="#exampleModal"
+                    id="pseudoSend"
+                  >
+                    <i class="fa-solid fa-paper-plane"></i> Send Symptoms
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Voice Audio Symptoms -->
+          <div class="col-lg-6">
+            <div class="p-4 rounded-3 h-100" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); display: flex; flex-direction: column;">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0 fw-bold text-white" style="font-size: 1.05rem;">
+                  <i class="fa-solid fa-microphone-lines text-warning me-2"></i> Voice Symptoms
+                </h5>
+                <span class="badge bg-secondary" style="font-size: 0.75rem;">Audio AI Mode</span>
+              </div>
+              <p class="text-muted" style="font-size: 0.85rem;">Speak your health concerns clearly into your microphone for NLP transcribing:</p>
+
+              <!-- Audio Deck hierarchy matching recorder.js -->
+              <div class="audio-deck flex-grow-1" id="audiotag">
+                <!-- Child 1: audio playback -->
+                <div class="col-lg-12 align-self-center" style="display: none">
+                  <figure class="text-center w-100">
+                    <figcaption class="my-2 text-muted" style="font-size: 0.85rem;">
+                      Review Recorded Audio
+                    </figcaption>
+                    <audio id="audi" controls class="w-100">
+                      Your browser does not support audio playback.
+                    </audio>
+                  </figure>
+                </div>
+
+                <!-- Child 2: duration input -->
+                <div style="display: none" class="col-lg-12 align-self-center text-center my-2">
+                  <label for="SymptomAudio1" class="form-label justify-content-center text-info">
+                    Duration of Symptoms (in days)
+                  </label>
+                  <input
+                    type="number"
+                    class="form-control mx-auto"
+                    id="SymptomAudio1"
+                    placeholder="e.g. 3"
+                    style="max-width: 260px;"
+                  />
+                </div>
+
+                <!-- Child 3: send audio button -->
+                <div style="display: none" class="col-lg-12 align-self-center text-center my-2">
+                  {% csrf_token %}
+                  <button class="btn btn-success px-4 disabled" id="sendButton">
+                    <i class="fa-solid fa-paper-plane me-1"></i> Send Voice Recording
+                  </button>
+                </div>
+
+                <!-- Child 4: status text -->
+                <p class="text-center" id="statusShow">Ready to Record</p>
+              </div>
+
+              <!-- Audio Controls Buttons -->
+              <div class="row g-2 justify-content-center">
+                <div class="col-3">
+                  <button class="btn btn-secondary w-100 disabled" id="startButton" title="Start Recording">
+                    <i class="fa-solid fa-circle text-danger"></i> <span class="d-none d-sm-inline">Record</span>
+                  </button>
+                </div>
+                <div class="col-3">
+                  <button class="btn btn-secondary w-100 disabled" id="pauseButton" title="Pause">
+                    <i class="fa-solid fa-pause text-warning"></i> <span class="d-none d-sm-inline">Pause</span>
+                  </button>
+                </div>
+                <div class="col-3">
+                  <button class="btn btn-secondary w-100 disabled" id="stopButton" title="Stop Recording">
+                    <i class="fa-solid fa-stop text-secondary"></i> <span class="d-none d-sm-inline">Stop</span>
+                  </button>
+                </div>
+                <div class="col-3">
+                  <button class="btn btn-secondary w-100 disabled" id="listenButton" title="Review Audio">
+                    <i class="fa-solid fa-headphones text-info"></i> <span class="d-none d-sm-inline">Listen</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Predicted Disease & Precautions Results -->
+        <div class="row justify-content-center mt-5" style="display: none;">
+          <div class="col-12">
+            <div class="p-4 rounded-3" style="background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-subtle);">
+              <div class="d-flex align-items-center gap-3 mb-3">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(56, 189, 248, 0.15); display: flex; align-items: center; justify-content: center; font-size: 20px; color: #38bdf8;">
+                  <i class="fa-solid fa-notes-medical"></i>
+                </div>
+                <div>
+                  <h4 class="mb-0 fw-bold text-white" style="font-size: 1.25rem;">Predicted Condition & Care Protocol</h4>
+                  <p class="mb-0 text-muted" style="font-size: 0.85rem;">Generated by machine learning diagnostic symptom matrix</p>
+                </div>
+              </div>
+
+              <!-- Accordion -->
+              <div class="accordion my-4" id="accordionExample"></div>
+
+              <!-- Advice -->
+              <div class="p-3 rounded-2" style="background: rgba(56, 189, 248, 0.08); border-left: 4px solid var(--primary-light);">
+                <p class="mb-0 fw-semibold text-white" id="advice">
+                  <i class="fa-solid fa-lightbulb text-warning me-2"></i><strong>CLINICAL ADVICE: </strong>
+                </p>
+              </div>
+
+              <!-- Doctor Booking Button -->
+              <div class="text-center mt-4">
+                <a class="btn btn-danger px-4 py-2" href="{% url 'appointment' %}">
+                  <i class="fa-solid fa-calendar-check me-2"></i> Book Appointment with Doctor
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal for Days Input -->
+<div
+  class="modal fade"
+  id="exampleModal"
+  tabindex="-1"
+  aria-labelledby="exampleModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        {% csrf_token %}
+        <h5 class="modal-title d-flex align-items-center gap-2" id="exampleModalLabel">
+          <i class="fa-solid fa-calendar-days text-info"></i> Symptom Timeline
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="SymptomInput" class="form-label">
+            For how many days have you had these symptoms?
+          </label>
+          <input
+            type="number"
+            class="form-control"
+            id="SymptomInput"
+            placeholder="Enter number of days (e.g. 4)"
+            min="1"
+            max="365"
+          />
+          <div class="form-helper">
+            <i class="fa-solid fa-circle-info"></i> Helps determine acute vs chronic presentation
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          data-bs-dismiss="modal"
+        >
+          Cancel
+        </button>
+        {% csrf_token %}
+        <button class="btn btn-primary" id="sendSymptoms" data-bs-dismiss="modal">
+          <i class="fa-solid fa-check me-1"></i> Analyze Symptoms
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'soundRecorder/recorder.js' %}"></script>
+{% endblock %}

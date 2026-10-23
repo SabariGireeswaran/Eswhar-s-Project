@@ -1,0 +1,545 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Health Checkup | AI Diagnostics & Care{% endblock %}</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+  
+  <!-- Favicon -->
+  <link rel="shortcut icon" href="{% static 'front/medical-checkup.png' %}" type="image/png">
+
+  <style>
+    :root {
+      --bg-main: #090e17;
+      --bg-surface: #0f172a;
+      --bg-card: rgba(15, 23, 42, 0.75);
+      --bg-card-hover: rgba(30, 41, 59, 0.85);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(56, 189, 248, 0.3);
+      --primary: #0284c7;
+      --primary-light: #38bdf8;
+      --primary-glow: rgba(56, 189, 248, 0.25);
+      --accent-teal: #10b981;
+      --accent-purple: #a855f7;
+      --accent-rose: #f43f5e;
+      --accent-amber: #f59e0b;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Ambient Background Orbs */
+    .ambient-glow {
+      position: fixed;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      filter: blur(140px);
+      opacity: 0.12;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .glow-1 {
+      top: -120px;
+      left: -100px;
+      background: radial-gradient(circle, #0284c7, transparent);
+    }
+    .glow-2 {
+      top: 40%;
+      right: -120px;
+      background: radial-gradient(circle, #8b5cf6, transparent);
+    }
+    .glow-3 {
+      bottom: -100px;
+      left: 30%;
+      background: radial-gradient(circle, #10b981, transparent);
+    }
+
+    /* Top Navigation Bar */
+    .portal-nav {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: rgba(9, 14, 23, 0.85);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 14px 0;
+    }
+
+    .portal-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+    }
+    .portal-brand:hover {
+      color: #ffffff;
+    }
+
+    .portal-brand-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 18px;
+      box-shadow: 0 4px 14px var(--primary-glow);
+    }
+
+    .nav-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: var(--primary-light);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .btn-back-dashboard {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-primary);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: var(--transition);
+    }
+    .btn-back-dashboard:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+      transform: translateX(-2px);
+    }
+
+    /* Modern Glass Card */
+    .glass-card {
+      position: relative;
+      z-index: 1;
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+      padding: 32px;
+      transition: var(--transition);
+    }
+
+    .glass-card:hover {
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .glass-card-header {
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 20px;
+      margin-bottom: 24px;
+    }
+
+    /* Form Controls */
+    .form-label {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .form-label .unit-hint {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .form-control, .form-select {
+      background-color: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-size: 0.92rem;
+      transition: var(--transition);
+    }
+
+    .form-control:focus, .form-select:focus {
+      background-color: rgba(15, 23, 42, 0.85);
+      border-color: var(--primary-light);
+      color: #ffffff;
+      box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.18);
+    }
+
+    .form-control::placeholder {
+      color: #475569;
+    }
+
+    .form-select option {
+      background-color: #0f172a;
+      color: #ffffff;
+    }
+
+    .input-group-text {
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-secondary);
+      border-radius: var(--radius-sm);
+    }
+
+    /* Form Helper Text */
+    .form-helper {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .form-helper i {
+      color: var(--primary-light);
+    }
+
+    /* Modern Buttons */
+    .btn-primary {
+      background: linear-gradient(135deg, #0284c7, #0ea5e9);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: #ffffff;
+      font-weight: 600;
+      padding: 12px 24px;
+      box-shadow: 0 4px 16px rgba(56, 189, 248, 0.3);
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #0369a1, #0284c7);
+      color: #ffffff;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-primary);
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      padding: 12px 24px;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      transform: translateY(-2px);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #059669, #10b981);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: white;
+      font-weight: 600;
+      padding: 12px 24px;
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.25);
+      transition: var(--transition);
+    }
+    .btn-success:hover {
+      background: linear-gradient(135deg, #047857, #059669);
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #e11d48, #f43f5e);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: white;
+      font-weight: 600;
+      padding: 12px 24px;
+      box-shadow: 0 4px 16px rgba(244, 63, 94, 0.25);
+      transition: var(--transition);
+    }
+    .btn-danger:hover {
+      background: linear-gradient(135deg, #be123c, #e11d48);
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    /* Result Cards */
+    .result-hero {
+      text-align: center;
+      padding: 40px 24px;
+      border-radius: var(--radius-lg);
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .result-hero.success {
+      background: linear-gradient(180deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.4) 100%);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .result-hero.danger {
+      background: linear-gradient(180deg, rgba(244, 63, 94, 0.15) 0%, rgba(15, 23, 42, 0.4) 100%);
+      border: 1px solid rgba(244, 63, 94, 0.3);
+    }
+    .result-hero.warning {
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.15) 0%, rgba(15, 23, 42, 0.4) 100%);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .result-icon-ring {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      margin-bottom: 20px;
+    }
+    .result-icon-ring.success {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 2px solid rgba(16, 185, 129, 0.4);
+      box-shadow: 0 0 30px rgba(16, 185, 129, 0.25);
+    }
+    .result-icon-ring.danger {
+      background: rgba(244, 63, 94, 0.2);
+      color: #fb7185;
+      border: 2px solid rgba(244, 63, 94, 0.4);
+      box-shadow: 0 0 30px rgba(244, 63, 94, 0.25);
+    }
+    .result-icon-ring.warning {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+      border: 2px solid rgba(245, 158, 11, 0.4);
+      box-shadow: 0 0 30px rgba(245, 158, 11, 0.25);
+    }
+
+    /* Modern Table */
+    .table-glass {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      color: var(--text-primary);
+    }
+    .table-glass th {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .table-glass td {
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.9rem;
+      vertical-align: middle;
+    }
+    .table-glass tbody tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Modal styling */
+    .modal-content {
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      color: var(--text-primary);
+    }
+    .modal-header {
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 20px 24px;
+    }
+    .modal-footer {
+      border-top: 1px solid var(--border-subtle);
+      padding: 16px 24px;
+    }
+    .btn-close {
+      filter: invert(1) grayscale(100%) brightness(200%);
+    }
+
+    /* Links */
+    a {
+      color: var(--primary-light);
+      text-decoration: none;
+      transition: var(--transition);
+    }
+    a:hover {
+      color: #7dd3fc;
+    }
+
+    /* Crispy forms compatibility */
+    .portal-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      padding: 36px;
+      max-width: 520px;
+      margin: 40px auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Footer */
+    .portal-footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 20px 0;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: auto;
+      position: relative;
+      z-index: 1;
+    }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <!-- Ambient background glow lights -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+  <div class="ambient-glow glow-3"></div>
+
+  <!-- Sticky Navbar -->
+  <nav class="portal-nav">
+    <div class="container d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-3">
+        <a href="{% url 'index' %}" class="portal-brand">
+          <div class="portal-brand-icon">
+            <i class="fa-solid fa-heart-pulse"></i>
+          </div>
+          <span>Health Checkup</span>
+        </a>
+        <div class="d-none d-md-block">
+          {% block page_badge %}
+            <span class="nav-badge"><i class="fa-solid fa-shield-halved"></i> Diagnostics</span>
+          {% endblock %}
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center gap-2">
+        {% if request.user.is_authenticated %}
+          <div class="d-none d-sm-flex align-items-center gap-2 px-3 py-1 rounded-pill" style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-subtle); font-size: 0.85rem; color: var(--text-secondary);">
+            <i class="fa-solid fa-circle-user" style="color: var(--primary-light);"></i>
+            <span>{{ request.user.username }}</span>
+          </div>
+          <a href="{% url 'index' %}" class="btn-back-dashboard">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="{% url 'logout' %}" class="btn-back-dashboard" style="color: #fda4af; border-color: rgba(244, 63, 94, 0.3);" title="Sign Out">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            <span class="d-none d-sm-inline">Logout</span>
+          </a>
+        {% else %}
+          <a href="{% url 'login' %}" class="btn-back-dashboard">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i>
+            <span>Sign In</span>
+          </a>
+          <a href="{% url 'register' %}" class="btn-back-dashboard" style="background: rgba(2, 132, 199, 0.2); border-color: rgba(56, 189, 248, 0.4); color: var(--primary-light);">
+            <i class="fa-solid fa-user-plus"></i>
+            <span>Register</span>
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <!-- Page Main Content Block -->
+  <main class="flex-grow-1 py-4">
+    {% block content %}
+    {% endblock %}
+  </main>
+
+  <!-- Minimal Footer -->
+  <footer class="portal-footer text-center">
+    <div class="container d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+      <div>
+        &copy; 2026 <strong>Health Checkup</strong>. AI Preventive Healthcare & Diagnostics.
+      </div>
+      <div class="d-flex gap-3">
+        <a href="{% url 'index' %}" class="text-muted">Home</a>
+        {% if request.user.is_authenticated %}
+          <a href="{% url 'logout' %}" class="text-muted">Logout ({{ request.user.username }})</a>
+        {% else %}
+          <a href="{% url 'login' %}" class="text-muted">Sign In</a>
+          <a href="{% url 'register' %}" class="text-muted">Register</a>
+        {% endif %}
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js" integrity="sha384-7+zCNj/IqJ95wo16oMtfsKbZ9ccEh31eOz1HGyDuCQ6wgnyJNSYdrPa03rtR1zdB" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>
