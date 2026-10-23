@@ -1,3 +1,4 @@
+import os
 import cv2
 import csv
 import json
@@ -26,8 +27,19 @@ from tensorflow.keras.preprocessing.image import img_to_array , array_to_img , l
 # model4 = ''
 # model5 = ''
 
-model1 = load_model("models/alzheimer-model.h5")
+ALZHEIMER_MODEL_PATH = "models/alzheimer-model.h5"
+model1 = None
 
+# The Alzheimer model is too large for GitHub, so load it only when needed
+# instead of at import time; the rest of the site works without it.
+def get_alzheimer_model():
+    global model1
+    if model1 is None:
+        if not os.path.exists(ALZHEIMER_MODEL_PATH):
+            raise FileNotFoundError(
+                f"{ALZHEIMER_MODEL_PATH} not found. Download it and place it in the models folder (see README).")
+        model1 = load_model(ALZHEIMER_MODEL_PATH)
+    return model1
 
 
 
@@ -94,9 +106,10 @@ def predict_alzheimer(img , img_path , cam_path):
     img = np.asarray(img, dtype=np.float32)/255.0
     img = img.reshape((1, *img.shape))
     class2label = {0: 'Mild Demented', 1: 'Moderate Demented', 2: 'Non Demented', 3: 'Very Mild Demented'}
-    pred = class2label[np.argmax(model1.predict(img)[0])]
+    model = get_alzheimer_model()
+    pred = class2label[np.argmax(model.predict(img)[0])]
 
-    heatmap = make_gradcam_heatmap(img, model1, 'block5_pool')
+    heatmap = make_gradcam_heatmap(img, model, 'block5_pool')
     save_and_display_gradcam(img_path, heatmap, cam_path, alpha=0.9)
     return pred , cam_path
 

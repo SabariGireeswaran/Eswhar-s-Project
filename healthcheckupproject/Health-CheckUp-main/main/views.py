@@ -88,7 +88,10 @@ def alzheimerPred(request):
         file_path = os.path.join(settings.MEDIA_ROOT, img.name)
 
         img = Image.open(img).convert("RGB").resize((224, 224))
-        label , cam_path = predict_alzheimer(img , file_path , file_path.replace(".jpg", "") + "_camViz.jpg")
+        try:
+            label , cam_path = predict_alzheimer(img , file_path , file_path.replace(".jpg", "") + "_camViz.jpg")
+        except FileNotFoundError as e:
+            return HttpResponse(str(e), status=503)
 
         with open(cam_path, "rb") as img2str:
             converted_string = base64.b64encode(img2str.read())

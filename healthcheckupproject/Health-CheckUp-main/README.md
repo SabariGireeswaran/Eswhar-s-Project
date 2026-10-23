@@ -36,20 +36,18 @@ The application mainly consists of three features:
 **Step 1. Clone the repository into a new folder and then switch to code directory**
 
 ```
-git clone https://github.com/gautamgc17/Health-CheckUp.git
-cd Health-CheckUp
+git clone https://github.com/SabariGireeswaran/Eswhar-s-Project.git
+cd Eswhar-s-Project/healthcheckupproject/Health-CheckUp-main
 ```
 
 **Step 2. Create a Virtual Environment to install dependencies.**
 
-```
-pip install virtualenv
-```
+This project needs **Python 3.9** (see `runtime.txt`). The pinned packages such as TensorFlow 2.7 do not install on newer Python versions.
 
 Create a new Virtual Environment for the project and activate the environment to install the libraries.
 
 ```
-virtualenv env
+py -3.9 -m venv env
 env\Scripts\activate
 ```
 
@@ -63,7 +61,9 @@ pip install -r requirements.txt
 
 **Step3 . Download the trained models and include them in the models folder of the root directory.**
 
-The trained deep learning models can be downloaded from [here](https://drive.google.com/drive/folders/1_A7VgM08sQ6Pgzb7ohmTb17EyRASAOCb).
+The diabetes, heart and liver models are already in the `models` folder. The Alzheimer model (`alzheimer-model.h5`, about 1 GB) is too large for GitHub, so download it separately and place it at `models/alzheimer-model.h5`. The trained deep learning models can be downloaded from [here](https://drive.google.com/drive/folders/1_A7VgM08sQ6Pgzb7ohmTb17EyRASAOCb).
+
+The rest of the website works without this file; only the Alzheimer prediction page needs it.
 
 **Step 4. Set up Amazon Transcribe API for speech to text conversion**
 
@@ -79,6 +79,12 @@ To run the project, you need to configure the application to run locally. This w
 In the same directory, create a local environment file, named - `.env`.
 
 _Now simply duplicate the variables in **.env.sample** file and just insert your credentials into local environment file - `.env`._
+
+```
+copy .env.sample .env
+```
+
+`SECRET_KEY`, `EMAIL_HOST_USER` and `EMAIL_HOST_PASSWORD` are required for the server to start. The AWS values are only needed for the voice-to-text feature.
 
 **Step 6. Run Django Project.**
 
