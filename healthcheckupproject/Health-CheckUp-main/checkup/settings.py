@@ -15,11 +15,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = [
-    "*"
-]
+# Comma-separated list of allowed hosts, e.g. "example.com,www.example.com".
+# Defaults to "*" for local development; set this explicitly (and set
+# DEBUG=False) before deploying anywhere public.
+ALLOWED_HOSTS = config(
+    'ALLOWED_HOSTS', default='*',
+    cast=lambda v: [h.strip() for h in v.split(',') if h.strip()]
+)
 
 
 # Application definition

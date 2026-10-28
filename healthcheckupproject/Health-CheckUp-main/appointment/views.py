@@ -1,3 +1,4 @@
+import uuid
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from appointment.forms import NewUserForm, LoginForm
@@ -8,7 +9,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.views.generic import TemplateView, ListView
-from appointment.models import Doctor, Appointment
+from appointment.models import Doctor, Timeslots, Appointment
 
 def register_request(request):
     if request.user.is_authenticated:
@@ -61,44 +62,74 @@ def login_request(request):
 
 
 def search(request):
-	if request.method == 'POST':
-		timeslot = request.POST['timeSlot']
-		doctorName = request.POST['doctorName']
-		doc = Doctor.objects.get(name = doctorName)
-		docEmail = doc.email
+    if request.method == 'POST':
+        timeslot = request.POST.get('timeSlot')
+        doctorName = request.POST.get('doctorName')
 
-		userName = request.user
-		current_user = User.objects.get(username = userName)
-		userMail = current_user.email
+        if not timeslot or not doctorName:
+            return HttpResponse("Missing booking details.", status=400)
 
-		meetId = doc.appointment_set.all()[0]
+        doc = Doctor.objects.filter(name=doctorName).first()
+        if doc is None:
+            return HttpResponse("Selected doctor could not be found.", status=404)
 
-		subject = 'Request for Appointment'
-		message = f'Patient Name: {userName} \nPatient Email Id: {userMail} \nDoctor Name: {doctorName} \nDoctor Mail Id: {docEmail} \nTime slot {timeslot} \nMeeting Id for video call: {meetId}' 
-		from_email = settings.EMAIL_HOST_USER
-		recipient_list = [docEmail , userMail]
-		status = send_mail(subject, message, from_email, recipient_list)
-		if status == 1:
-			return HttpResponse("done")
-		else:
-			return HttpResponse("")
+        docEmail = doc.email
+        current_user = request.user
+        userMail = current_user.email
 
-	doctors = Doctor.objects.all()[:5]
-	context = {
-        "doctors" : doctors
+        # Create the booking: a fresh timeslot for this doctor plus an
+        # Appointment record with a freshly generated video call id.
+        # (Previously this looked up doc.appointment_set.all()[0], which
+        # assumed a booking already existed and raised IndexError for
+        # every doctor that had never been booked before.)
+        slot = Timeslots.objects.create(doctor=doc)
+        meeting_id = uuid.uuid4().hex[:12]
+        appointment = Appointment.objects.create(
+            user=current_user,
+            meetingId=meeting_id,
+            doctor=doc,
+            slot=slot,
+        )
+
+        subject = 'Request for Appointment'
+        message = (
+            f'Patient Name: {current_user.username} \n'
+            f'Patient Email Id: {userMail} \n'
+            f'Doctor Name: {doctorName} \n'
+            f'Doctor Mail Id: {docEmail} \n'
+            f'Time slot {timeslot} \n'
+            f'Meeting Id for video call: {appointment.meetingId}'
+        )
+        from_email = settings.EMAIL_HOST_USER
+        recipient_list = [docEmail, userMail]
+        try:
+            status = send_mail(subject, message, from_email, recipient_list)
+        except Exception:
+            status = 0
+        if status == 1:
+            return HttpResponse("done")
+        else:
+            return HttpResponse("")
+
+    doctors = Doctor.objects.all()[:5]
+    context = {
+        "doctors": doctors
     }
-	return render(request , 'videocall/videocallpage.html' , context)
+    return render(request, 'videocall/videocallpage.html', context)
 
 
 class BookAppointment(ListView):
-	model = Doctor
-	template_name = 'videocall/output.html'
-	context_object_name = 'appointment'
-	
-	def get_queryset(self):
-		obj = self.model.objects.filter(state__contains=self.request.GET['state'], 
-		specialization__contains=self.request.GET['specialization'])
-		return obj
+    model = Doctor
+    template_name = 'videocall/output.html'
+    context_object_name = 'appointment'
+
+    def get_queryset(self):
+        state = self.request.GET.get('state', '')
+        specialization = self.request.GET.get('specialization', '')
+        return self.model.objects.filter(
+            state__contains=state,
+            specialization__contains=specialization,
+        )
 
 
 def logout_request(request):
