@@ -43,23 +43,30 @@ def get_alzheimer_model():
 
 
 
+_pickle_model_cache = {}
+
+def _load_pickle_model(path):
+    # Load each .pkl once per process instead of unpickling it on every
+    # request.
+    if path not in _pickle_model_cache:
+        with open(path, 'rb') as file:
+            _pickle_model_cache[path] = pickle.load(file)
+    return _pickle_model_cache[path]
+
 def predict_diabetes(features):
-    with open('models/diabetes-model.pkl', 'rb') as file:
-        model = pickle.load(file)
+    model = _load_pickle_model('models/diabetes-model.pkl')
     pred = model.predict(features)
     return int(pred[0])
 
 def predict_heartD(features):
-    with open('models/heart-model.pkl', 'rb') as file:
-        model = pickle.load(file)
+    model = _load_pickle_model('models/heart-model.pkl')
     pred = model.predict(features)
     return int(pred[0])
 
 
 
 def predict_liverD(features):
-    with open('models/liver-model.pkl', 'rb') as file:
-        model = pickle.load(file)
+    model = _load_pickle_model('models/liver-model.pkl')
     pred = model.predict(features)
     return int(pred[0])
 
@@ -118,48 +125,71 @@ def predict_alzheimer(img , img_path , cam_path):
 
 
 
-def predict_disease(user_symptoms, days=5):
+_disease_model_cache = None
+
+def _get_disease_model():
+    # Training a RandomForest and re-reading the CSV lookup tables on every
+    # single request was the previous behaviour; cache everything after the
+    # first call instead.
+    global _disease_model_cache
+    if _disease_model_cache is not None:
+        return _disease_model_cache
+
     training = pd.read_csv('models/training.csv')
-    cols= training.columns[:-1]
+    cols = training.columns[:-1]
     x = training[cols]
     y = training['prognosis']
     le = LabelEncoder()
     y = le.fit_transform(y)
 
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25, random_state=42)
-    clf = RandomForestClassifier().fit(x_train,y_train)
+    clf = RandomForestClassifier(random_state=42).fit(x_train, y_train)
 
     symptoms_dict = {}
+    for index, symptom in enumerate(x):
+        symptoms_dict[symptom] = index
+
     severity_dict = {}
     description_dict = {}
     precautions_dict = {}
 
-    for index, symptom in enumerate(x):
-        symptoms_dict[symptom] = index
-
     with open('models/symptom_description.csv') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
-        line_count = 0
         for row in csv_reader:
-            description = {row[0]:row[1]}
-            description_dict.update(description)
+            description_dict[row[0]] = row[1]
 
     with open('models/symptom_severity.csv') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
-        line_count = 0
         try:
             for row in csv_reader:
-                severity_mapping = {row[0]:int(row[1])}
-                severity_dict.update(severity_mapping)
+                severity_dict[row[0]] = int(row[1])
         except:
             pass
 
     with open('models/symptom_precaution.csv') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
-        line_count = 0
         for row in csv_reader:
-            prec={row[0]:[row[1],row[2],row[3],row[4]]}
-            precautions_dict.update(prec)
+            precautions_dict[row[0]] = [row[1], row[2], row[3], row[4]]
+
+    _disease_model_cache = {
+        'clf': clf,
+        'le': le,
+        'symptoms_dict': symptoms_dict,
+        'severity_dict': severity_dict,
+        'description_dict': description_dict,
+        'precautions_dict': precautions_dict,
+    }
+    return _disease_model_cache
+
+
+def predict_disease(user_symptoms, days=5):
+    cache = _get_disease_model()
+    clf = cache['clf']
+    le = cache['le']
+    symptoms_dict = cache['symptoms_dict']
+    severity_dict = cache['severity_dict']
+    description_dict = cache['description_dict']
+    precautions_dict = cache['precautions_dict']
 
     input_vector = np.zeros(len(symptoms_dict))
     output = {}
